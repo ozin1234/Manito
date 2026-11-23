@@ -1,0 +1,49 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.secrets/
+secrets/
+credentials*.json
+*service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and generated artifacts
+node_modules/
+.pnpm-store/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+dist/
+build/
+coverage/
+.next/
+.turbo/
+*.log
+
+# Local datasets, model weights, experiments and outputs
+.local/
+data/raw/
+data/private/
+models/checkpoints/
+outputs/
+*.sqlite
+*.sqlite3
+*.db
+
+# OS and editor state
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.tmp
