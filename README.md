@@ -1,6 +1,6 @@
 # K-ROAD
 
-생활불편·도로·안전재난을 우왓과 사진·음성·텍스트로 확인하고, 동의한 현장 기록을 지도에 저장하는 서비스입니다. 춘천시·강릉시의회 공개 민원 목록과 기관용 관리 화면을 연결했습니다. GitHub 저장소 이름은 협업 링크를 보존하기 위해 `Manito`를 유지합니다. 원본 GROAD 소스와 DB는 변경하지 않습니다.
+생활불편·도로·안전재난을 우왓이 설명 입력 없이 현장 사진으로 판단하고, 동의한 현장 기록을 지도에 저장하는 서비스입니다. 춘천시·강릉시의회 공개 민원 목록과 기관용 관리 화면을 연결했습니다. GitHub 저장소 이름은 협업 링크를 보존하기 위해 `Manito`를 유지합니다. 기반 프로젝트의 원본 소스와 DB는 변경하지 않습니다.
 
 공개 민원은 실제 게시판의 제목·게시일·원문 상태·링크를 수집한 목록입니다. 정확한 좌표를 임의로 만들지 않습니다. 기관 관리(`/admin`)는 별도 로그인, 담당 부서 배정, 처리 이력, 버전 충돌 방지, 시민 앱에 공개할 안내를 지원합니다. 현재는 K-ROAD 내부 관리이며 외부 기관 업무 시스템·안전신문고 전송은 연결되지 않았습니다. [수집·관리 화면 실행 및 검증 안내](docs/KROAD_PUBLIC_COMPLAINTS_ADMIN.md)를 참고하세요.
 
@@ -38,11 +38,11 @@ node scripts/setup.mjs --maps-network groad_independent_default
 node scripts/dev.mjs --shared-maps
 ```
 
-이 모드는 Docker Desktop과 해당 네트워크의 지도 서비스가 필요합니다. Manito API와 제보 볼륨은 `manito-dev` 프로젝트로 새로 생성합니다. 기존 GROAD 제보 API와 DB는 사용하지 않습니다. 종료할 때 Manito API만 중지하고 제보 볼륨을 유지합니다.
+이 모드는 Docker Desktop과 해당 네트워크의 지도 서비스가 필요합니다. Manito API와 제보 볼륨은 `manito-dev` 프로젝트로 새로 생성합니다. 기존 프로젝트의 제보 API와 DB는 사용하지 않습니다. 종료할 때 Manito API만 중지하고 제보 볼륨을 유지합니다.
 
 ## Gemini 설정
 
-[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.8-flash`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진·텍스트는 서버가 Gemini에 전송하며, 음성 인식과 읽기는 브라우저 기능입니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
+[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.8-flash`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진만으로 먼저 판단하며 설명 입력·마이크·음성 읽기는 제공하지 않습니다. 분석 결과와 확인 질문이 준비되면 짧은 알림음을 재생합니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
 
 ## 검증
 

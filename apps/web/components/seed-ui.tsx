@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ActionButton, Badge, TextField } from "@seed-design/react";
 
-/** G-ROAD's small SEED Design adapter. Keep SEED's native prop names. */
+/** K-ROAD's small SEED Design adapter. Keep SEED's native prop names. */
 export type SeedButtonProps = React.ComponentProps<typeof ActionButton>;
 
 export const SeedButton = React.forwardRef<HTMLButtonElement, SeedButtonProps>(

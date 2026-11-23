@@ -140,7 +140,7 @@ body{background:#f7f9f7;color:#18324b}
 @media(max-width:780px){.topbar{justify-content:space-between}.header-search{margin-left:auto}.header-search-trigger{width:42px;height:42px}.search-popover{left:auto;right:0}}
 .topbar{background:transparent;backdrop-filter:none;border-bottom:0;box-shadow:none}
 
-/* G-ROAD road-pin mark and an open map heading without a banner card. */
+/* K-ROAD road-pin mark and an open map heading without a banner card. */
 .logo-mark{display:block;flex:none;width:42px;height:46px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
 .logo-mark:after{content:none}
 .map-section-first{margin-top:10px}

@@ -20,7 +20,7 @@ export async function generateGeminiJson({ key, model = DEFAULT_GEMINI_MODEL, co
   let result;
   try { result = await response.json(); } catch { throw new ApiError("AI_RESPONSE_INVALID", "Gemini 응답을 읽지 못했습니다.", 502); }
   const candidate = result.candidates?.[0];
-  if (result.promptFeedback?.blockReason || ["SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"].includes(candidate?.finishReason)) throw new ApiError("AI_REFUSED", "이 입력은 Gemini가 처리하지 못했습니다. 다른 사진이나 설명으로 다시 요청해 주세요.", 422);
+  if (result.promptFeedback?.blockReason || ["SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII"].includes(candidate?.finishReason)) throw new ApiError("AI_REFUSED", "이 입력은 Gemini가 처리하지 못했습니다. 다른 사진으로 다시 요청해 주세요.", 422);
   if (!candidate || candidate.finishReason !== "STOP") throw new ApiError("AI_INCOMPLETE", "Gemini 판단이 끝나지 않았습니다. 입력을 유지하고 다시 요청해 주세요.", 502);
   const text = (candidate.content?.parts ?? []).filter((part) => typeof part.text === "string" && part.thought !== true).map((part) => part.text).join("");
   try { return JSON.parse(text); } catch { throw new ApiError("AI_RESPONSE_INVALID", "Gemini 판단 형식을 읽지 못했습니다.", 502); }

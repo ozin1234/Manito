@@ -1,4 +1,4 @@
-/* SEED primitives stay on their native recipes; this adapts the surrounding G-ROAD surfaces. */
+/* SEED primitives stay on their native recipes; this adapts the surrounding K-ROAD surfaces. */
 .seed-groad {
   --groad-danger: #ec4c5c;
   --groad-near-miss: #fa9c37;

@@ -1,11 +1,74 @@
 [
-  {"id":"manito-topics","title":"생활불편·도로·안전재난 탐색 분야","authority":"product","url":null,"checkedAt":"2026-11-23","text":"K-ROAD는 생활불편(living: 쓰레기 방치·악취·생활 시설물 불편), 도로(road: 포트홀·보도 파손·도로 장애물), 안전재난(safety: 침수 우려·낙하 위험·안전 시설물 이상) 세 분야로 탐색한다. 분야와 danger/near_miss/caution 위험 표시는 서로 독립적이다. 이는 공식 행정기관 신고 분류가 아니다. 선택 분야는 사용자가 정하며 다른 분야가 더 적절해 보이면 전환을 제안하고 몰래 옮기지 않는다. 과거 분야 없는 지도 기록은 도로에 속한다. 안전재난 기록은 실시간 경보나 긴급 출동 요청이 아니며, 즉각적인 구조가 필요한 상황에서는 긴급 서비스를 먼저 이용한다."},
-  {"id":"official-report-scope","title":"안전신문고의 신고 대상과 긴급 상황 안내","authority":"official","url":"https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html","checkedAt":"2026-11-23","text":"안전신문고 자주하는 질문 12·13의 요약: 긴급하지 않은 생활 안전 위험을 신고하며, 도로·맨홀·보도블록 파손과 보행 안전 위험 등이 포함된다. 즉각적인 구조·사고 대응이 필요한 상황은 일반 민원 처리와 구분하고 112·119 등 긴급 서비스를 안내한다. K-ROAD 대화 저장이 긴급 출동 요청을 대신하지 않는다."},
-  {"id":"official-report-status","title":"공식 신고 접수와 처리 확인","authority":"official","url":"https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html","checkedAt":"2026-11-23","text":"안전신문고 자주하는 질문 1·7·14의 요약: 공식 앱 또는 홈페이지로 접수하고, 처리 진행·답변은 나의 신고 또는 처리기관 연락처에서 확인한다. K-ROAD에는 공식 기관 접수·회신 API가 연결되어 있지 않다. K-ROAD 지도 저장 상태는 draft/not_submitted이며 접수 완료나 조치 완료라고 말하면 안 된다."},
-  {"id":"official-gps-accuracy","title":"안전신문고의 GPS 권한 안내","authority":"official","url":"https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html","checkedAt":"2026-11-23","text":"안전신문고 자주하는 질문 9의 요약: 위치가 정상 표시되지 않으면 휴대폰 위치 서비스, 앱의 현재 위치 설정, 운영체제의 앱 위치 권한을 확인한다. 이 안내는 위치 확인 절차이며 사진만으로 좌표나 정확한 입구를 확정할 수 있다는 의미는 아니다."},
-  {"id":"manito-categories","title":"K-ROAD 내부 지도 분류 기준","authority":"product","url":null,"checkedAt":"2026-11-23","text":"K-ROAD 내부 지도 표시는 danger(관찰된 파손·장애물 등 점검이 필요한 위험), near_miss(사용자가 사고로 이어질 뻔한 사건을 설명한 경우), caution(예방적으로 알릴 주의 사항)이다. 이는 안전신문고 공식 행정 분류나 검증된 사고 확률이 아니다. 사진만 보고 실제 아차 사고가 발생했다고 추정하지 않는다. LLM은 관찰과 사용자 설명을 근거로 분류 초안을 제안하고 사용자가 확인한다."},
-  {"id":"manito-photo-uncertainty","title":"사진 해석의 불확실성과 추가 질문","authority":"product","url":null,"checkedAt":"2026-11-23","text":"도로의 검은 부분은 포트홀·물웅덩이·그림자 등으로 해석될 수 있다. 사진 한 장으로 깊이, 침수 범위, 결빙, 진행 방향, 교통 통제, 실제 사고 발생을 확정하지 않는다. 관찰한 사실과 추정을 분리하고, 구별이 필요한 경우 최대 세 가지 짧은 선택지와 질문을 만든다. 확인할 수 없다는 답도 허용한다. 근거가 부족하면 자동 저장하지 말고 초안을 보류한다."},
-  {"id":"manito-driving","title":"운전 중 대화와 보류","authority":"product","url":null,"checkedAt":"2026-11-23","text":"운전 중 모드에서는 촬영·타이핑·화면 선택을 요구하지 않는다. 기존 사진과 음성 설명으로 초안을 만들고 판단이 끝나 질문이 필요한 때 알림음과 짧은 음성 질문을 제공한다. 답은 음성으로 받거나 정차 후 이어간다. 음성이 지원되지 않거나 권한이 없으면 정차 후 확인하도록 보류하며 운전 중 사진을 찍거나 화면을 조작하라고 권하지 않는다."},
-  {"id":"manito-consent","title":"사진·대화 AI 처리와 지도 공개 확인","authority":"product","url":null,"checkedAt":"2026-11-23","text":"외부 AI 처리에는 사진과 대화가 전송된다는 동의가 필요하다. 얼굴·번호판 등 개인정보를 피하거나 가린 사진을 사용하고 클라이언트에서 EXIF를 제거한다. GPS 좌표는 모델에 사진 위치 추측을 맡기는 용도로 쓰지 않는다. 공개 전 사용자가 초안과 현장 위치를 확인하고 지도 저장에 동의해야 한다. 확인 토큰이 없는 모델의 제안만으로 공개 저장할 수 없다."},
-  {"id":"manito-research-limits","title":"과거 연구 자료의 사용 한계","authority":"product","url":null,"checkedAt":"2026-11-23","text":"과거 HGB 사고예측의 최종 완전격자 검정은 예측력의 유의한 개선을 입증하지 못했다. 시민 사진·대화의 위험 분류를 검증된 사고 발생 확률이나 실시간 도로 통제로 표현하지 않는다. 우왓의 LLM/RAG 답변도 현장 조사나 공공기관의 판단을 대신하지 않는다."}
+  {
+    "id": "manito-topics",
+    "title": "생활불편·도로·안전재난 탐색 분야",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "K-ROAD 탐색 분야는 생활불편(living: 쓰레기 방치·악취·생활 시설물 불편), 도로(road: 포트홀·보도 파손·도로 장애물), 안전재난(safety: 침수 우려·낙하 위험·안전 시설물 이상)이다. 메뉴 선택은 탐색 맥락이며 사진의 정답 분류가 아니다. AI가 사진의 관찰 가능한 단서로 suggestedTopic을 제안하고 초안과 최종 질문에서 사용자 확인 후 저장한다. 분야와 danger/near_miss/caution 위험 표시는 서로 독립적이다. 공식 행정기관 신고 분류가 아니며 분야만으로 실제 재난 발생을 단정하지 않는다. 과거 분야 없는 기록은 도로에 속한다. 긴급 상황은 지도 기록을 기다리지 않고 긴급 서비스를 이용한다."
+  },
+  {
+    "id": "official-report-scope",
+    "title": "안전신문고의 신고 대상과 긴급 상황 안내",
+    "authority": "official",
+    "url": "https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html",
+    "checkedAt": "2026-11-23",
+    "text": "안전신문고 자주하는 질문 12·13의 요약: 긴급하지 않은 생활 안전 위험을 신고하며, 도로·맨홀·보도블록 파손과 보행 안전 위험 등이 포함된다. 즉각적인 구조·사고 대응이 필요한 상황은 일반 민원 처리와 구분하고 112·119 등 긴급 서비스를 안내한다. K-ROAD 대화 저장이 긴급 출동 요청을 대신하지 않는다."
+  },
+  {
+    "id": "official-report-status",
+    "title": "공식 신고 접수와 처리 확인",
+    "authority": "official",
+    "url": "https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html",
+    "checkedAt": "2026-11-23",
+    "text": "안전신문고 자주하는 질문 1·7·14의 요약: 공식 앱 또는 홈페이지로 접수하고, 처리 진행·답변은 나의 신고 또는 처리기관 연락처에서 확인한다. K-ROAD에는 공식 기관 접수·회신 API가 연결되어 있지 않다. K-ROAD 지도 저장 상태는 draft/not_submitted이며 접수 완료나 조치 완료라고 말하면 안 된다."
+  },
+  {
+    "id": "official-gps-accuracy",
+    "title": "안전신문고의 GPS 권한 안내",
+    "authority": "official",
+    "url": "https://www.safetyreport.go.kr/html/portal/customercenter/frequentlyAskedQuestions.html",
+    "checkedAt": "2026-11-23",
+    "text": "안전신문고 자주하는 질문 9의 요약: 위치가 정상 표시되지 않으면 휴대폰 위치 서비스, 앱의 현재 위치 설정, 운영체제의 앱 위치 권한을 확인한다. 이 안내는 위치 확인 절차이며 사진만으로 좌표나 정확한 입구를 확정할 수 있다는 의미는 아니다."
+  },
+  {
+    "id": "manito-categories",
+    "title": "K-ROAD 내부 지도 분류 기준",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "K-ROAD 내부 지도 표시는 danger(관찰된 파손·장애물 등 점검이 필요한 위험), near_miss(사용자가 사고로 이어질 뻔한 사건을 설명한 경우), caution(예방적으로 알릴 주의 사항)이다. 이는 안전신문고 공식 행정 분류나 검증된 사고 확률이 아니다. 사진만 보고 실제 아차 사고가 발생했다고 추정하지 않는다. LLM은 관찰과 확인 선택지을 근거로 분류 초안을 제안하고 사용자가 확인한다."
+  },
+  {
+    "id": "manito-photo-uncertainty",
+    "title": "사진 해석의 불확실성과 추가 질문",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "도로의 검은 부분은 포트홀·물웅덩이·그림자 등으로 해석될 수 있다. 사진 한 장으로 깊이, 침수 범위, 결빙, 진행 방향, 교통 통제, 실제 사고 발생을 확정하지 않는다. 관찰한 사실과 추정을 분리하고, 구별이 필요한 경우 최대 세 가지 짧은 선택지와 질문을 만든다. 확인할 수 없다는 답도 허용한다. 근거가 부족하면 자동 저장하지 말고 초안을 보류한다."
+  },
+  {
+    "id": "kroad-photo-notifications",
+    "title": "사진 분석과 확인 알림",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "K-ROAD는 설명 입력 없이 현장 사진을 먼저 분석한다. 마이크 요청·음성 입력·음성 읽기는 제공하지 않는다. 분석 결과와 확인 질문이 준비되면 알림음과 화면 상태로 알린다. 알림음은 브라우저 자동 재생 정책 때문에 최초 사용자 조작으로 준비해야 할 수 있다. 확인할 수 없으면 다른 사진을 올리거나 보류할 수 있다. 운전 중에는 촬영이나 화면 조작을 요구하지 않고 안전한 장소에서 확인하도록 안내한다."
+  },
+  {
+    "id": "manito-consent",
+    "title": "사진·대화 AI 처리와 지도 공개 확인",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "외부 AI 처리에는 사진과 확인 선택지가 전송된다는 동의가 필요하다. 얼굴·번호판 등 개인정보를 피하거나 가린 사진을 사용하고 클라이언트에서 EXIF를 제거한다. GPS 좌표는 모델에 사진 위치 추측을 맡기는 용도로 쓰지 않는다. 공개 전 사용자가 초안과 현장 위치를 확인하고 지도 저장에 동의해야 한다. 확인 토큰이 없는 모델의 제안만으로 공개 저장할 수 없다."
+  },
+  {
+    "id": "manito-research-limits",
+    "title": "과거 연구 자료의 사용 한계",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-23",
+    "text": "과거 HGB 사고예측의 최종 완전격자 검정은 예측력의 유의한 개선을 입증하지 못했다. 시민 사진의 위험 분류를 검증된 사고 발생 확률이나 실시간 도로 통제로 표현하지 않는다. 우왓의 LLM/RAG 답변도 현장 조사나 공공기관의 판단을 대신하지 않는다."
+  }
 ]

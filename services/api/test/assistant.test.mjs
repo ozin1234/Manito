@@ -10,8 +10,8 @@ const key = "0123456789abcdef0123456789abcdef";
 const headers = { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 const photo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=";
 const location = () => ({ lat: 37.874, lng: 127.734, locationSource: "gps", locationAccuracyM: 12.4, locationCapturedAt: new Date().toISOString() });
-const analysis = (changes = {}) => ({ intent: "road_report", reply: "사진의 어두운 부분이 무엇인지 확인이 필요해요.", uncertainty: "ambiguous", observations: ["도로에 어두운 영역이 보입니다."], category: null, title: "", summary: "", description: "", reason: "사진으로 깊이를 확인할 수 없습니다.", question: "실제로 움푹 팬 부분이었나요?", options: ["패인 구멍", "그림자나 물", "확인할 수 없음"], sourceIds: ["manito-photo-uncertainty"], ready: false, ...changes });
-const ready = () => analysis({ reply: "말씀해 주신 파손 내용을 초안으로 정리했어요.", uncertainty: "clear", category: "danger", title: "도로 파손", summary: "도로에 파인 구멍이 있어 점검이 필요합니다.", description: "사용자가 도로에 파인 구멍을 관찰했다고 설명했습니다.", reason: "사진의 어두운 부분과 사용자의 현장 확인 설명을 함께 반영했습니다.", question: "", options: [], ready: true });
+const analysis = (changes = {}) => ({ intent: "road_report", suggestedTopic: "road", reply: "사진의 어두운 부분이 무엇인지 확인이 필요해요.", uncertainty: "ambiguous", observations: ["도로에 어두운 영역이 보입니다."], category: null, title: "", summary: "", description: "", reason: "사진으로 깊이를 확인할 수 없습니다.", question: "실제로 움푹 팬 부분이었나요?", options: ["패인 구멍", "그림자나 물", "확인할 수 없음"], sourceIds: ["manito-photo-uncertainty"], ready: false, ...changes });
+const ready = () => analysis({ reply: "사진에서 확인한 파손을 초안으로 정리했어요.", uncertainty: "clear", category: "danger", title: "도로 파손", summary: "도로에 파인 구멍이 있어 점검이 필요합니다.", description: "사진에서 도로 표면에 파인 부분이 관찰됩니다.", reason: "사진에서 보이는 도로 표면의 파손 단서를 반영했습니다.", question: "", options: [], ready: true });
 const response = (value) => Response.json({ candidates: [{ finishReason: "STOP", content: { role: "model", parts: [{ text: JSON.stringify(value) }] } }] });
 async function environment(run) {
   const folder = await mkdtemp(path.join(os.tmpdir(), "manito-assistant-"));
@@ -22,7 +22,7 @@ async function environment(run) {
 async function send(config, endpoint, body) {
   return handle(new Request(`http://manito.test/v1/assistant/${endpoint}`, { headers, ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) }) }), config);
 }
-const body = (changes = {}) => ({ message: "사진 속 도로를 확인해 주세요.", photoDataUrl: photo, location: location(), allowAiProcessing: true, ...changes });
+const body = (changes = {}) => ({ photoDataUrl: photo, location: location(), allowAiProcessing: true, ...changes });
 
 test("missing provider key and missing consent are explicit errors, never canned AI", async () => environment(async (config, folder) => {
   globalThis.fetch = async () => assert.fail("Provider must not be called");
@@ -39,13 +39,13 @@ test("missing provider key and missing consent are explicit errors, never canned
 test("multimodal RAG uses actual retrieved documents and asks without publishing", async () => environment(async (config, folder) => {
   let payload;
   globalThis.fetch = async (url, options) => { assert.equal(String(url), "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"); assert.equal(options.headers["x-goog-api-key"], config.geminiApiKey); assert.ok(!String(url).includes(config.geminiApiKey)); payload = JSON.parse(options.body); return response(analysis()); };
-  const result = await send(config, "chat", body({ drivingMode: true }));
+  const result = await send(config, "chat", body());
   assert.equal(result.status, 200);
   const value = await result.json();
   assert.equal(value.phase, "needs_clarification"); assert.equal(value.question.options.length, 3); assert.equal(value.confirmationToken, null);
   assert.equal(payload.generationConfig.responseMimeType, "application/json"); assert.equal(payload.generationConfig.responseJsonSchema.additionalProperties, false);
   assert.ok(payload.contents.at(-1).parts.some((item) => item.inlineData?.mimeType === "image/png" && item.inlineData.data === photo.split(",")[1]));
-  assert.ok(payload.contents.at(-1).parts[0].text.includes('"drivingMode":true'));
+  assert.ok(payload.contents.at(-1).parts[0].text.includes('"analysisMode":"photo_only"'));
   assert.ok(payload.contents.at(-1).parts[0].text.includes("manito-photo-uncertainty"));
   assert.ok(!JSON.stringify(payload).includes(config.geminiApiKey));
   assert.equal(value.sources[0].authority, "product");
@@ -86,18 +86,18 @@ test("clear drafts require a location and explicit confirmation, and committed d
   assert.equal(image.status, 200); assert.deepEqual(Buffer.from(await image.arrayBuffer()), Buffer.from(photo.split(",")[1], "base64"));
 }));
 
-test("a changed description invalidates the previous confirmation token", async () => environment(async (config) => {
+test("a changed location invalidates the previous confirmation token", async () => environment(async (config) => {
   globalThis.fetch = async () => response(ready());
   const first = await (await send(config, "chat", body())).json();
-  const second = await (await send(config, "chat", body({ sessionId: first.sessionId, message: "현장 위치와 설명을 수정합니다." }))).json();
+  const second = await (await send(config, "chat", body({ sessionId: first.sessionId, location: { ...location(), lat: 37.875 } }))).json();
   assert.notEqual(first.confirmationToken, second.confirmationToken);
   const old = await send(config, "commit", { sessionId: first.sessionId, revision: first.revision, confirmationToken: first.confirmationToken, confirmed: true });
   assert.equal(old.status, 409);
 }));
 
-test("an unrelated question receives model scope handling and cannot create a report", async () => environment(async (config, folder) => {
+test("an unrelated photo receives model scope handling and cannot create a report", async () => environment(async (config, folder) => {
   globalThis.fetch = async () => response(analysis({ intent: "out_of_scope", reply: "우왓은 도로 안전과 이 서비스 이용을 도와드려요. 발견한 도로 상황이 있다면 같이 확인할 수 있어요.", uncertainty: "clear", observations: [], question: "", options: [], sourceIds: [] }));
-  const result = await (await send(config, "chat", body({ message: "정치 이야기를 해 줘", photoDataUrl: "" }))).json();
+  const result = await (await send(config, "chat", body())).json();
   assert.equal(result.phase, "conversation"); assert.equal(result.confirmationToken, null);
   assert.equal(result.analysis.intent, "out_of_scope");
   assert.deepEqual((await readdir(folder)).filter((name) => name.endsWith(".json")), []);
@@ -168,7 +168,7 @@ test("selected topics reach Gemini, confirmation and stored reports without chan
   globalThis.fetch = async (_url, options) => {
     const payload = JSON.parse(options.body);
     modelContext = JSON.parse(payload.contents.at(-1).parts[0].text).context;
-    return response(ready());
+    return response({ ...ready(), suggestedTopic: modelContext.selectedTopic.id });
   };
   for (const topic of ["living", "road", "safety"]) {
     const first = await (await send(config, "chat", body({ topic }))).json();
@@ -205,4 +205,59 @@ test("RAG retrieves from the corpus and notices a reviewed corpus update", async
   await writeFile(file, JSON.stringify([document("new-water", "침수 물웅덩이 도로 사진 확인 신규자료")]), "utf8");
   results = await retrieveKnowledge("침수", file);
   assert.equal(results[0].id, "new-water"); assert.ok(!results.some((row) => row.id === "pothole"));
+}));
+
+test("photo-only mode rejects missing photos and user descriptions before contacting Gemini", async () => environment(async (config) => {
+  globalThis.fetch = async () => assert.fail("Invalid input must never reach Gemini");
+  const status = await (await send(config, "status")).json();
+  assert.equal(status.analysisMode, "photo_only"); assert.equal(status.audio, "notification_only");
+  for (const [request, code] of [[body({ photoDataUrl: "" }), "PHOTO_REQUIRED"], [body({ photoDataUrl: undefined }), "PHOTO_REQUIRED"], [body({ message: "도로에 구멍이 있어요" }), "TEXT_INPUT_DISABLED"]]) {
+    const result = await send(config, "chat", request);
+    assert.equal(result.status, 400); assert.equal((await result.json()).error.code, code);
+  }
+}));
+
+test("unknown photo judgments stay unclassified and unsupported AI fields cannot become decisions", async () => environment(async (config) => {
+  globalThis.fetch = async () => response(analysis({ suggestedTopic: "unknown", category: "unknown" }));
+  const value = await (await send(config, "chat", body())).json();
+  assert.equal(value.analysis.suggestedTopic, null); assert.equal(value.analysis.category, null);
+  assert.equal(value.confirmationToken, null);
+  globalThis.fetch = async () => response(analysis({ suggestedTopic: "politics" }));
+  const invalid = await send(config, "chat", body());
+  assert.equal(invalid.status, 502); assert.equal((await invalid.json()).error.code, "AI_RESPONSE_INVALID");
+}));
+
+test("AI can propose a different field from the browsing tab and stores only the confirmed proposal", async () => environment(async (config) => {
+  globalThis.fetch = async () => response({ ...ready(), suggestedTopic: "living", title: "쓰레기 방치", summary: "사진에서 주변에 쌓인 쓰레기가 관찰됩니다." });
+  const draft = await (await send(config, "chat", body({ topic: "road" }))).json();
+  assert.equal(draft.topic, "road"); assert.equal(draft.analysis.suggestedTopic, "living");
+  assert.ok(draft.question.text.includes("생활불편"));
+  const result = await send(config, "commit", { sessionId: draft.sessionId, revision: draft.revision, confirmationToken: draft.confirmationToken, confirmed: true });
+  assert.equal(result.status, 201); assert.equal((await result.json()).report.topic, "living");
+}));
+
+test("replacing a photo drops previous observations and location and invalidates old consent", async () => environment(async (config) => {
+  let lastPayload;
+  globalThis.fetch = async (_url, options) => { lastPayload = JSON.parse(options.body); return response(ready()); };
+  const first = await (await send(config, "chat", body())).json();
+  const second = await (await send(config, "chat", body({ sessionId: first.sessionId, photoDataUrl: "data:image/jpeg;base64,/9j/2Q==", location: undefined }))).json();
+  assert.equal(second.phase, "needs_location"); assert.equal(second.hasPhoto, true);
+  assert.equal(JSON.parse(lastPayload.contents.at(-1).parts[0].text).context.previousDraft, null);
+  assert.equal(lastPayload.contents.length, 1);
+  assert.equal(lastPayload.contents.at(-1).parts[1].inlineData.mimeType, "image/jpeg");
+  const stale = await send(config, "commit", { sessionId: first.sessionId, revision: first.revision, confirmationToken: first.confirmationToken, confirmed: true });
+  assert.equal(stale.status, 409);
+}));
+
+test("legacy description-based drafts cannot be resumed or published after the mode change", async () => environment(async (config, folder) => {
+  globalThis.fetch = async () => response(ready());
+  const first = await (await send(config, "chat", body())).json();
+  const file = path.join(folder, "_assistant", `${first.sessionId}.json`);
+  const session = JSON.parse(await readFile(file, "utf8")); delete session.analysisMode;
+  await writeFile(file, JSON.stringify(session));
+  globalThis.fetch = async () => assert.fail("A legacy draft must start fresh");
+  const turn = await send(config, "chat", body({ sessionId: first.sessionId }));
+  assert.equal(turn.status, 409); assert.equal((await turn.json()).error.code, "SESSION_MODE_CHANGED");
+  const commit = await send(config, "commit", { sessionId: first.sessionId, revision: first.revision, confirmationToken: first.confirmationToken, confirmed: true });
+  assert.equal(commit.status, 409); assert.equal((await commit.json()).error.code, "PHOTO_REQUIRED");
 }));
