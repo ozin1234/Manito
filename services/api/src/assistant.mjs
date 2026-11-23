@@ -24,8 +24,8 @@ const schema = {
   },
   required: ["intent", "reply", "uncertainty", "observations", "category", "title", "summary", "description", "reason", "question", "options", "sourceIds", "ready"],
 };
-const instructions = `너는 Manito의 우왓 생활불편·도로·안전재난 대화 도우미다. 사진, 사용자 대화, 제공된 검색 근거를 함께 보고 한국어로 자연스럽게 응답한다.
-selectedTopic은 사용자가 선택한 분야다. living=생활불편(쓰레기 방치·악취·생활 시설물 불편), road=도로(포트홀·보도 파손·장애물), safety=안전재난(침수 우려·낙하 위험·안전 시설물 이상)이다. 이는 Manito 탐색 분야이며 공식 행정 분류가 아니다.
+const instructions = `너는 K-ROAD의 우왓 생활불편·도로·안전재난 대화 도우미다. 사진, 사용자 대화, 제공된 검색 근거를 함께 보고 한국어로 자연스럽게 응답한다.
+selectedTopic은 사용자가 선택한 분야다. living=생활불편(쓰레기 방치·악취·생활 시설물 불편), road=도로(포트홀·보도 파손·장애물), safety=안전재난(침수 우려·낙하 위험·안전 시설물 이상)이다. 이는 K-ROAD 탐색 분야이며 공식 행정 분류가 아니다.
 세 분야의 현장 기록 초안은 기존 API 호환을 위해 모두 intent=road_report를 사용한다. 다른 분야에 해당할 것 같으면 선택 분야와 차이를 설명하고 분야 전환을 제안한다. 사용자의 선택과 무관한 분야로 몰래 저장하지 않는다. 분야만으로 위험도나 실제 재난 발생을 확정하지 않는다.
 정치 등 생활불편·도로·안전재난·서비스 사용과 무관한 요청은 intent=out_of_scope로 짧게 범위를 설명하고 관련 도움으로 안내한다. 범위 밖의 요청으로 제보를 만들지 않는다.
 안전재난 기록은 긴급 출동 요청이나 실시간 재난 경보가 아니다. 즉각적인 구조가 필요한 경우 대화나 저장을 기다리게 하지 말고 112·119 등 긴급 서비스 이용을 안내한다.
@@ -143,7 +143,7 @@ export async function assistantTurn(body, config) {
     if (analysis.intent === "road_report") {
       if (analysis.ready && session.location) {
         session.phase = "awaiting_confirmation"; session.confirmationToken = randomUUID();
-        session.question = { id: randomUUID(), kind: "confirm", text: "확인한 내용과 사진·위치를 Manito 지도에 공개 저장할까요? 기관 공식 접수는 별도입니다.", options: [{ id: "confirm", label: "지도에 저장" }, { id: "defer", label: "나중에 확인" }] };
+        session.question = { id: randomUUID(), kind: "confirm", text: "확인한 내용과 사진·위치를 K-ROAD 지도에 공개 저장할까요? 기관 공식 접수는 별도입니다.", options: [{ id: "confirm", label: "지도에 저장" }, { id: "defer", label: "나중에 확인" }] };
       } else if (analysis.ready) {
         session.phase = "needs_location";
         session.question = { id: randomUUID(), kind: "location", text: "현장 위치를 확인해야 합니다. 현재 GPS를 사용하거나 정차 후 지도에서 위치를 골라 주세요.", options: [] };

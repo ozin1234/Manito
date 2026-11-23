@@ -13,6 +13,9 @@ const config = {
   summaryModel: process.env.GROAD_SUMMARY_MODEL,
   uwatModel: process.env.UWAT_MODEL || "gemini-3.8-flash",
   knowledgePath: process.env.UWAT_KNOWLEDGE_PATH || undefined,
+  adminUsername: process.env.KROAD_ADMIN_USERNAME,
+  adminPasswordHash: process.env.KROAD_ADMIN_PASSWORD_HASH,
+  adminSessionSecret: process.env.KROAD_ADMIN_SESSION_SECRET,
 };
 if (!config.key || config.key.length < 32) throw new Error("GROAD_API_KEY must contain at least 32 characters");
 const port = Number(process.env.PORT ?? "8788");
@@ -45,4 +48,4 @@ createServer(async (incoming, outgoing) => {
     if (!outgoing.headersSent) outgoing.writeHead(400);
     outgoing.end();
   }
-}).listen(port, host, () => console.log(`G-ROAD Independent API listening on ${host}:${port}`));
+}).listen(port, host, () => console.log(`K-ROAD Independent API listening on ${host}:${port}`));

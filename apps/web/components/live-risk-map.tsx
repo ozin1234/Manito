@@ -7,12 +7,14 @@ import type { TrafficSnapshot } from "@/lib/groad-api";
 import { locationErrorMessage, locationPreflight } from "@/lib/location-diagnostics";
 import { GpsAccessHint } from "./gps-access-hint";
 import type { ReportTopic } from "@/lib/report-topics";
+import type { PublicCaseUpdate } from "@/lib/case-types";
 
 export type ReportCategory = "danger" | "near_miss" | "caution";
 export type SafetyReport = {
   id: string; topic?: ReportTopic; category: ReportCategory; title: string; summary: string; description: string;
   lat: number; lng: number; photoUrl?: string; createdAt: string; status: string;
   agencyStatus?: string; summarySource?: string;
+  managementProgress?: PublicCaseUpdate;
   locationSource?: "gps" | "map"; locationAccuracyM?: number | null; locationCapturedAt?: string | null;
 };
 type Coordinate = { lat: number; lng: number };

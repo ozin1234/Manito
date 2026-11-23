@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { hashAdminPassword } from "../services/api/src/admin-auth.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const envPath = path.join(root, ".env");
@@ -17,6 +18,16 @@ for (const [key, value] of Object.entries({ MANITO_WEB_PORT: "5174", MANITO_API_
 if (!configured.GROAD_API_KEY) additions.GROAD_API_KEY = randomBytes(32).toString("hex");
 if (!Object.hasOwn(configured, "GEMINI_API_KEY")) additions.GEMINI_API_KEY = "";
 if (!configured.UWAT_MODEL) additions.UWAT_MODEL = "gemini-3.8-flash";
+if (process.argv.includes("--admin")) {
+  if (!configured.KROAD_ADMIN_SESSION_SECRET) additions.KROAD_ADMIN_SESSION_SECRET = randomBytes(32).toString("hex");
+  if (!configured.KROAD_ADMIN_USERNAME) additions.KROAD_ADMIN_USERNAME = "agency-admin";
+  if (!configured.KROAD_ADMIN_PASSWORD_HASH) {
+    const password = randomBytes(20).toString("base64url");
+    additions.KROAD_ADMIN_PASSWORD_HASH = hashAdminPassword(password);
+    mkdirSync(path.join(root, ".local"), { recursive: true });
+    writeFileSync(path.join(root, ".local/kroad-admin-access.txt"), `K-ROAD local agency management\nURL: http://127.0.0.1:${configured.MANITO_WEB_PORT || additions.MANITO_WEB_PORT || "5174"}/admin\nUsername: ${configured.KROAD_ADMIN_USERNAME || additions.KROAD_ADMIN_USERNAME}\nPassword: ${password}\nPrivate local credentials; never commit or share publicly.\n`, { mode: 0o600 });
+  }
+}
 const networkIndex = process.argv.indexOf("--maps-network");
 if (networkIndex !== -1) {
   const network = process.argv[networkIndex + 1];
@@ -37,3 +48,4 @@ mkdirSync(webRoot, { recursive: true });
 writeFileSync(path.join(webRoot, ".env.local"), `GROAD_INDEPENDENT_API_URL=http://127.0.0.1:${port}\nGROAD_INDEPENDENT_API_KEY=${process.env.GROAD_API_KEY}\n`, { mode: 0o600 });
 mkdirSync(path.join(root, ".local/reports"), { recursive: true });
 console.log("Manito local settings are ready. Credentials were kept in ignored environment files.");
+if (process.argv.includes("--admin")) console.log("K-ROAD admin setup checked. Newly generated local access details are in .local/kroad-admin-access.txt (ignored by Git).");

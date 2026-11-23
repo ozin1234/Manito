@@ -5,12 +5,13 @@ import "./globals.css";
 import "./safety-map.css";
 import "./safety-app.css";
 import "./uwat-chat.css";
+import "./public-complaints.css";
 
 export const metadata: Metadata = {
-  title: "G-ROAD | 강원 도로 안전 제보 지도",
-  description: "위험지역, 아차!지역, 단순주의지역을 함께 알리는 시민 제보 지도",
+  title: "K-ROAD | 강원 생활불편·도로·안전재난",
+  description: "생활불편·도로·안전재난 공개 민원과 우왓 현장 기록을 함께 확인합니다.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "G-ROAD", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "K-ROAD", statusBarStyle: "black-translucent" },
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg", apple: "/icon-192.png" },
 };
 
