@@ -1,0 +1,43 @@
+.gr-safety-map{position:relative;isolation:isolate;width:100%;height:100%;min-height:540px;overflow:hidden;border-radius:24px;background:#d9e7df;color:#28352d;font-family:inherit}
+.gr-safety-map-canvas{position:absolute;inset:0;z-index:0}
+.gr-safety-map .leaflet-container{width:100%;height:100%;background:#d9e7df}
+.gr-safety-map .leaflet-control-attribution{font-size:9px;background:rgba(255,255,255,.85)}
+.gr-safety-map.is-night .leaflet-tile-pane{filter:brightness(.48) saturate(.75) hue-rotate(12deg)}
+.gr-map-category-filter{position:absolute;z-index:610;left:18px;top:18px;display:flex;gap:7px;max-width:calc(100% - 92px);overflow:auto;scrollbar-width:none}
+.gr-map-category-filter::-webkit-scrollbar{display:none}
+.gr-map-category-filter button{display:flex;align-items:center;gap:6px;flex:none;min-height:38px;padding:0 12px;border:1px solid rgba(255,255,255,.9);border-radius:999px;background:rgba(255,255,255,.95);box-shadow:0 4px 15px rgba(40,51,45,.11);color:#68756d;font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.gr-map-category-filter button.active{color:#26392f}
+.gr-map-category-filter button span{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#a5aea5;color:#fff;font-size:12px;font-weight:900}
+.gr-map-category-filter button.danger span{background:#df4d4f}
+.gr-map-category-filter button.near_miss span{background:#ec8b3f}
+.gr-map-category-filter button.caution span{background:#d1a839}
+.gr-map-controls{position:absolute;z-index:620;right:18px;top:18px;display:flex;flex-direction:column;gap:8px}
+.gr-map-controls button{display:grid;place-items:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.92);border-radius:15px;background:rgba(255,255,255,.96);box-shadow:0 5px 16px rgba(40,51,45,.14);color:#3d5544;font:inherit;font-size:27px;font-weight:450;line-height:1;cursor:pointer}
+.gr-map-controls button.active,.gr-map-controls button:first-child{background:#338465;color:#fff}
+.gr-map-layer-menu{position:absolute;z-index:630;right:72px;top:18px;display:grid;gap:3px;width:min(235px,calc(100% - 100px));padding:13px;border:1px solid #e0e9e2;border-radius:18px;background:#fff;box-shadow:0 12px 35px rgba(31,49,38,.23)}
+.gr-map-layer-menu strong{padding:5px 7px 9px;font-size:13px}
+.gr-map-layer-menu button{display:flex;align-items:center;gap:8px;min-height:39px;padding:8px;border:0;border-radius:11px;background:transparent;color:#415349;text-align:left;font:inherit;font-size:12px;cursor:pointer}
+.gr-map-layer-menu button.active{background:#e3f3e9;color:#287c54;font-weight:850}
+.gr-map-layer-menu small{margin-left:auto;white-space:nowrap;color:#75837b;font-size:10px}
+.gr-map-layer-menu p{margin:5px 7px 1px;color:#667970;font-size:10px;line-height:1.45}
+.gr-map-weather,.gr-map-gps,.gr-map-imagery-note,.gr-map-message{position:absolute;z-index:610;left:18px;display:flex;align-items:center;gap:5px;padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 5px 15px rgba(40,51,45,.12);font-size:11px;font-weight:750}
+.gr-map-weather{top:67px}.gr-map-weather small{color:#7f8e84;font-size:9px;font-weight:500}
+.gr-map-gps{top:108px}
+.gr-map-imagery-note{bottom:77px;max-width:calc(100% - 36px);background:rgba(28,41,34,.88);color:#fff;line-height:1.4}
+.gr-map-message{top:148px;max-width:min(350px,calc(100% - 90px));color:#aa4d3b;line-height:1.4;display:block}
+.gr-gps-access-hint{display:flex;align-items:end;gap:7px;width:100%;margin-top:8px}.gr-gps-access-hint label{display:block;flex:1;min-width:0;font-size:10px;color:#667487}.gr-gps-access-hint input{display:block;width:100%;margin-top:3px;padding:6px;border:1px solid #cbd5de;border-radius:7px;background:#fff;color:#223247;font-size:10px}.gr-gps-access-hint button{flex:none;padding:7px 8px;border:0;border-radius:7px;background:#345dfa;color:#fff;font-size:10px;font-weight:800}
+.gr-map-new-report{position:absolute;z-index:610;left:18px;bottom:18px;display:flex;align-items:center;gap:8px;min-height:49px;padding:0 17px;border:0;border-radius:16px;background:#338465;color:#fff;box-shadow:0 8px 22px rgba(29,91,65,.24);font:inherit;font-size:14px;font-weight:850;cursor:pointer}
+.gr-report-pin{position:relative;display:grid;place-items:center;width:41px;height:41px;border:4px solid #fff;border-radius:50% 50% 50% 7px;background:#df4d4f;box-shadow:0 4px 15px rgba(39,34,29,.25);color:#fff;font-size:23px;font-weight:950;transform:rotate(-45deg)}
+.gr-report-pin b{display:block;transform:rotate(45deg);font:inherit}
+.gr-report-pin-near_miss{background:#ec8b3f}.gr-report-pin-caution{background:#d1a839}
+.gr-user-icon span{display:block;width:22px;height:22px;border:4px solid #fff;border-radius:50%;background:#3c76f6;box-shadow:0 0 0 6px rgba(60,118,246,.2),0 2px 12px rgba(26,52,115,.35)}
+.gr-map-report-detail{position:absolute;z-index:650;left:18px;bottom:80px;width:min(342px,calc(100% - 92px));max-height:min(60vh,490px);overflow:auto;padding:16px;border:1px solid #edf1ed;border-radius:20px;background:#fff;box-shadow:0 18px 44px rgba(26,46,31,.26)}
+.gr-map-detail-top{display:flex;justify-content:space-between;align-items:center}.gr-map-detail-top button{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:#eef2ee;color:#506058;cursor:pointer}
+.gr-map-detail-badge{display:inline-flex;padding:6px 9px;border-radius:8px;background:#fce6e5;color:#b43f3f;font-size:10px;font-weight:850}
+.gr-map-detail-badge.near_miss{background:#fff0dd;color:#a85d22}.gr-map-detail-badge.caution{background:#fff5d5;color:#806b20}
+.gr-map-report-detail h2{margin:12px 0 5px;font-size:20px;letter-spacing:-.04em}.gr-map-report-detail p{margin:0 0 11px;color:#556b5c;font-size:13px;font-weight:650;line-height:1.5}
+.gr-map-report-detail img{display:block;width:100%;max-height:210px;object-fit:cover;border-radius:12px}
+.gr-map-detail-description{margin:12px 0;color:#415648;font-size:12px;line-height:1.55;white-space:pre-wrap}
+.gr-map-report-detail small{display:block;color:#8a988e;font-size:10px}
+.gr-map-detail-foot{display:flex;align-items:center;gap:6px;margin-top:12px;padding:9px;border-radius:9px;background:#fff4ed;color:#9b583b;font-size:10px;line-height:1.4}
+@media(max-width:780px){.gr-safety-map{min-height:calc(100dvh - 120px);border-radius:0}.gr-map-category-filter{left:12px;top:13px;max-width:calc(100% - 70px)}.gr-map-category-filter button{font-size:10px;min-height:35px;padding:0 9px}.gr-map-controls{right:11px;top:59px}.gr-map-controls button{width:40px;height:40px;border-radius:13px}.gr-map-weather{left:12px;top:59px}.gr-map-gps{left:12px;top:99px}.gr-map-message{left:12px;top:137px}.gr-map-imagery-note{left:12px;bottom:76px;font-size:9px}.gr-map-new-report{left:12px;bottom:14px}.gr-map-layer-menu{right:59px;top:59px}.gr-map-report-detail{left:12px;bottom:74px;width:calc(100% - 78px);max-height:48vh}}
