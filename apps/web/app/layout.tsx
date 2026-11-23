@@ -4,6 +4,7 @@ import "./seed-theme.css";
 import "./globals.css";
 import "./safety-map.css";
 import "./safety-app.css";
+import "./uwat-chat.css";
 
 export const metadata: Metadata = {
   title: "G-ROAD | 강원 도로 안전 제보 지도",

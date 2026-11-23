@@ -42,8 +42,8 @@ API 코드와 검증 테스트를 준비했고, 로컬 Docker에서 강원 도�
 - `POST /v1/reports`: `{ "category":"danger", "description":"도로에 큰 포트홀이 있어 차량이 급정거합니다.", "lat":37.764, "lng":128.9, "photoDataUrl":"data:image/jpeg;base64,...", "allowAiProcessing":false }`. 분류는 `danger`, `near_miss`, `caution`이고 사진은 선택사항입니다. JPG·PNG·WebP, 해독 후 최대 3MB입니다. 사진은 브라우저에서 캔버스로 다시 인코딩해 EXIF/GPS 메타데이터를 제거한 후 전송해야 합니다.
 - `GET /v1/reports/{id}/photo`: 저장된 사진을 받습니다. 웹앱은 `/api/v1/reports`와 `/api/v1/reports/{id}/photo`를 프록시합니다. 지도 조회자가 제보 내용과 사진을 볼 수 있으므로 제보 전 개인정보가 포함되지 않았는지 확인해야 합니다.
 - 응답의 `status:"draft"`와 `agencyStatus:"not_submitted"`는 **공공기관 접수가 아니라 G-ROAD 로컬 저장**을 의미합니다. 실제 안전신문고·시청에 자동 전송하는 API는 연결되지 않았습니다. 공식 접수는 제보자가 안전신문고에서 별도로 완료해야 합니다. 그 전에는 `기관 전달`이나 `처리 중`으로 표시하면 안 됩니다.
-- 요약은 기본적으로 텍스트의 첫 문장을 정리하는 규칙 기반 초안(`summarySource:"rule_based"`)입니다. 운영자가 서버에 `OPENAI_API_KEY`를 설정하고 제보자가 `allowAiProcessing:true`를 명시한 경우에만 텍스트를 OpenAI Responses API로 전송해 짧게 요약합니다(`summarySource:"ai"`). 사진은 AI로 보내지 않습니다. AI가 실패하면 규칙 기반 초안으로 저장합니다. 모델 ID는 `GROAD_SUMMARY_MODEL`로 바꿀 수 있습니다. [공식 OpenAI Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create)를 사용합니다.
-- 제보 데이터는 Docker `groad_reports_data` 볼륨에 유지됩니다. 이전 또는 백업 시 이 볼륨도 포함해야 합니다. 서비스 공개 전에는 로그인·남용 방지·개인정보 검토 절차와 기관 협약이 필요합니다.
+- 기존 직접 저장 API의 선택적 텍스트 요약은 `GEMINI_API_KEY`와 `allowAiProcessing:true`가 있을 때 Gemini를 사용합니다. 이 직접 API는 사진을 모델에 보내지 않으며 실패 시 기존 규칙 요약을 유지합니다. 별도 우왓 대화 API는 사진·문맥·RAG 근거를 모델에 보내고 실패 시 명시적 오류를 반환합니다. 상세 계약은 [우왓 구현 인계](../../docs/UWAT_GEMINI.md)를 확인하세요.
+- 제보 데이터는 Manito 전용 Docker `manito-dev_reports`(공유 지도 모드) 볼륨에 유지됩니다. 이전 또는 백업 시 이 볼륨도 포함해야 합니다. 서비스 공개 전에는 로그인·남용 방지·개인정보 검토 절차와 기관 협약이 필요합니다.
 
 브라우저에서 직접 호출할 CORS를 제공하지 않습니다. 운영 서버가 이 API를 호출하고, 모바일·웹 앱은 운영 서버에 요청하도록 합니다. API 서비스만 `127.0.0.1:8788`에 묶여 있고 OSRM, Nominatim, 타일 DB 포트는 외부에 열지 않습니다. 외부 서버 운영 시 TLS 역방향 프록시와 인증 호출 한도를 별도로 설정해야 합니다.
 

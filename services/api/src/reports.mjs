@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validPoint } from "./geo.mjs";
 import { ApiError } from "./providers.mjs";
+import { DEFAULT_GEMINI_MODEL, generateGeminiJson } from "./gemini.mjs";
 
 const CATEGORIES = new Set(["danger", "near_miss", "caution"]);
 const IMAGE_TYPES = new Map([
@@ -32,7 +33,7 @@ function automaticDraft(description, category) {
   return { title: subject, summary, summarySource: "rule_based" };
 }
 
-function parsePhoto(dataUrl) {
+export function parsePhoto(dataUrl) {
   if (dataUrl === undefined || dataUrl === null || dataUrl === "") return null;
   if (typeof dataUrl !== "string") throw new ApiError("INVALID_IMAGE", "사진 형식이 올바르지 않습니다.", 400);
   const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataUrl);
@@ -45,25 +46,16 @@ function parsePhoto(dataUrl) {
 }
 
 async function aiSummary(description, category, config) {
-  const key = config.openaiApiKey;
-  if (!key || typeof key !== "string") return null;
+  if (!config.geminiApiKey) return null;
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: config.summaryModel || "gpt-6-luna",
-        store: false,
-        max_output_tokens: 140,
-        instructions: "도로 위험 시민 제보의 내용을 한국어로 정리한다. 입력에 없는 위치, 사고, 긴급성, 기관 접수 여부를 만들어내지 마라. 한 줄 제목과 한 문장 요약을 JSON 객체 {\"title\":\"...\",\"summary\":\"...\"}로만 답한다. 제목 30자 이내, 요약 120자 이내.",
-        input: `분류: ${category}\n제보 내용: ${description}`,
-      }),
-      signal: AbortSignal.timeout(8000),
+    const parsed = await generateGeminiJson({
+      key: config.geminiApiKey,
+      model: config.summaryModel || config.uwatModel || DEFAULT_GEMINI_MODEL,
+      systemInstruction: "도로 위험 설명을 한국어 제목과 한 문장 요약으로 정리한다. 입력에 없는 위치, 사고, 긴급성, 기관 접수 여부를 만들지 않는다. 제목 30자 이내, 요약 120자 이내로 한다.",
+      contents: [{ role: "user", parts: [{ text: `분류: ${category}\n설명: ${description}` }] }],
+      schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" } }, required: ["title", "summary"], additionalProperties: false },
+      timeoutMs: 15_000, maxOutputTokens: 2000,
     });
-    if (!response.ok) return null;
-    const result = await response.json();
-    const text = result.output?.flatMap((item) => item.content ?? []).filter((part) => part.type === "output_text").map((part) => part.text).join("\n") ?? "";
-    const parsed = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
     const title = typeof parsed.title === "string" ? parsed.title.replace(/\s+/g, " ").trim() : "";
     const summary = typeof parsed.summary === "string" ? parsed.summary.replace(/\s+/g, " ").trim() : "";
     if (!title || !summary || title.length > 30 || summary.length > 120) return null;
@@ -75,7 +67,7 @@ function filePaths(directory, id, extension) {
   return { json: path.join(directory, `${id}.json`), photo: extension ? path.join(directory, `${id}.${extension}`) : null };
 }
 
-export async function createReport(body, config) {
+export async function createReport(body, config, approvedAssistant = null) {
   if (!body || !CATEGORIES.has(body.category) || !validPoint({ lat: body.lat, lng: body.lng }))
     throw new ApiError("INVALID_REPORT", "위험 분류와 국내 위치 좌표를 확인해 주세요.", 400);
   const locationSource = body.locationSource === "gps" ? "gps" : "map";
@@ -88,21 +80,36 @@ export async function createReport(body, config) {
     throw new ApiError("INVALID_LOCATION", "GPS 정확도와 측정 시각을 확인해 주세요.", 400);
   const description = cleanDescription(body.description);
   const photo = parsePhoto(body.photoDataUrl);
-  const draft = body.allowAiProcessing === true ? await aiSummary(description, body.category, config) : null;
-  const summary = draft ?? automaticDraft(description, body.category);
-  const id = randomUUID();
+  const draft = approvedAssistant ? null : body.allowAiProcessing === true ? await aiSummary(description, body.category, config) : null;
+  const summary = approvedAssistant ? { title: approvedAssistant.title, summary: approvedAssistant.summary, summarySource: "llm_rag" } : draft ?? automaticDraft(description, body.category);
+  const id = approvedAssistant?.reportId ?? randomUUID();
+  if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError("INVALID_REPORT_ID", "저장 번호를 확인할 수 없습니다.", 400);
   const report = {
     id, category: body.category, ...summary, description,
     lat: body.lat, lng: body.lng, locationSource, locationAccuracyM, locationCapturedAt,
     photoUrl: photo ? `/api/v1/reports/${id}/photo` : null,
     createdAt: new Date().toISOString(), status: "draft", agencyStatus: "not_submitted",
+    ...(approvedAssistant ? { assistant: { sessionId: id, model: approvedAssistant.model, sources: approvedAssistant.sources, reason: approvedAssistant.reason, confirmedAt: approvedAssistant.confirmedAt } } : {}),
   };
   const directory = config.reportsDir;
   if (!directory) throw new ApiError("REPORT_STORE_UNAVAILABLE", "제보 저장 공간이 설정되지 않았습니다.", 503);
   await mkdir(directory, { recursive: true });
   const files = filePaths(directory, id, photo?.extension);
-  if (photo) await writeFile(files.photo, photo.bytes, { flag: "wx", mode: 0o600 });
-  const temp = `${files.json}.tmp`;
+  if (approvedAssistant) {
+    try {
+      const existing = JSON.parse(await readFile(files.json, "utf8"));
+      if (existing.assistant?.sessionId !== id) throw new ApiError("REPORT_CONFLICT", "저장 번호가 이미 사용 중입니다.", 409);
+      const { photoMime, photoExtension, ...publicReport } = existing;
+      return publicReport;
+    } catch (error) { if (error.code !== "ENOENT") throw error; }
+  }
+  if (photo) {
+    try { await writeFile(files.photo, photo.bytes, { flag: "wx", mode: 0o600 }); }
+    catch (error) {
+      if (!approvedAssistant || error.code !== "EEXIST" || !(await readFile(files.photo)).equals(photo.bytes)) throw error;
+    }
+  }
+  const temp = `${files.json}.${randomUUID()}.tmp`;
   await writeFile(temp, JSON.stringify({ ...report, photoMime: photo?.mime ?? null, photoExtension: photo?.extension ?? null }), { flag: "wx", mode: 0o600 });
   await rename(temp, files.json);
   return report;

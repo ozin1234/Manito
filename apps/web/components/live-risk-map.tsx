@@ -41,11 +41,12 @@ function weatherLabel(value: Weather) {
   return "맑음";
 }
 
-export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, onNotice }: {
+export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, onNotice, pickingLocation = false }: {
   reports: SafetyReport[];
   onSelectReport?: (report: SafetyReport) => void;
   onNewReportAt: (point: Coordinate) => void;
   onNotice: (message: string) => void;
+  pickingLocation?: boolean;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -102,6 +103,15 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
       userMarkerRef.current = null; accuracyRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !pickingLocation) return;
+    const select = (event: L.LeafletMouseEvent) => onNewReportAt({ lat: event.latlng.lat, lng: event.latlng.lng });
+    map.getContainer().style.cursor = "crosshair";
+    map.on("click", select);
+    return () => { map.off("click", select); map.getContainer().style.cursor = ""; };
+  }, [pickingLocation, onNewReportAt]);
 
   useEffect(() => {
     const map = mapRef.current, tiles = baseRef.current;

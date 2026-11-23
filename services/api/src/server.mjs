@@ -9,8 +9,10 @@ const config = {
   itsApiKey: process.env.ITS_API_KEY,
   itsShapesPath: process.env.ITS_LINK_SHAPES_PATH,
   reportsDir: process.env.GROAD_REPORTS_DIR ?? "/app/data/reports",
-  openaiApiKey: process.env.OPENAI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
   summaryModel: process.env.GROAD_SUMMARY_MODEL,
+  uwatModel: process.env.UWAT_MODEL || "gemini-3.8-flash",
+  knowledgePath: process.env.UWAT_KNOWLEDGE_PATH || undefined,
 };
 if (!config.key || config.key.length < 32) throw new Error("GROAD_API_KEY must contain at least 32 characters");
 const port = Number(process.env.PORT ?? "8788");
@@ -22,7 +24,7 @@ createServer(async (incoming, outgoing) => {
     let size = 0;
     for await (const chunk of incoming) {
       size += chunk.length;
-      const maxBodyBytes = incoming.method === "POST" && incoming.url?.split("?")[0] === "/v1/reports" ? 4_300_000 : 8192;
+      const maxBodyBytes = incoming.method === "POST" && ["/v1/reports", "/v1/assistant/chat"].includes(incoming.url?.split("?")[0]) ? 4_300_000 : 8192;
       if (size > maxBodyBytes) {
         outgoing.writeHead(413).end();
         return;

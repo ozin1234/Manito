@@ -1,6 +1,6 @@
 # Manito
 
-사진·설명·현재 GPS로 도로 위험을 제보하고 지도에서 확인하는 서비스입니다. 사용자가 선택한 최신 GROAD 제보 앱을 별도 저장소로 인계했습니다. 기존 화면과 G-ROAD 표기는 유지하고 개발 환경과 제보 저장을 분리했습니다.
+우왓과 사진·음성·텍스트로 도로 상황을 확인하고, 동의한 초안을 지도에 저장하는 서비스입니다. GROAD 지도 기반을 유지하면서 별도 제보 양식을 대화 흐름으로 통합했습니다. 원본 GROAD 소스와 DB는 변경하지 않습니다.
 
 ## 구조
 
@@ -12,7 +12,7 @@
 | `.local/groad-research` | 인계 ZIP의 검증된 파일, 로컬에서만 보관 |
 | `scripts` | 설정 생성·실행·소스 인계·저장소 검증 |
 
-저장된 제보는 기관에 자동 접수되지 않습니다. AI 요약은 별도 서버 키와 사용자 동의가 있을 때만 사용하며, 기본 요약과 우왓 안내는 규칙 기반입니다.
+우왓은 Gemini 멀티모달 LLM과 로컬 BM25 근거 검색(RAG)을 사용합니다. 사진만으로 구분하기 어려우면 짧은 확인 질문을 만들고, 최신 초안·위치에 사용자가 동의한 뒤 저장합니다. 키가 없거나 AI가 실패하면 설정·오류 상태를 표시하며 규칙 답변으로 AI 동작을 가장하지 않습니다. 저장된 내용은 기관에 자동 접수되지 않습니다.
 
 ## 설치와 실행
 
@@ -21,6 +21,7 @@ Node.js 24, Python 3.10 이상, pnpm 11.25.0을 사용합니다. 웹 의존성�
 ```powershell
 pnpm --dir apps/web install --frozen-lockfile
 node scripts/setup.mjs
+# 루트 .env에 GEMINI_API_KEY 입력 후 실행
 node scripts/dev.mjs
 ```
 
@@ -34,6 +35,10 @@ node scripts/dev.mjs --shared-maps
 ```
 
 이 모드는 Docker Desktop과 해당 네트워크의 지도 서비스가 필요합니다. Manito API와 제보 볼륨은 `manito-dev` 프로젝트로 새로 생성합니다. 기존 GROAD 제보 API와 DB는 사용하지 않습니다. 종료할 때 Manito API만 중지하고 제보 볼륨을 유지합니다.
+
+## Gemini 설정
+
+[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.8-flash`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진·텍스트는 서버가 Gemini에 전송하며, 음성 인식과 읽기는 브라우저 기능입니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
 
 ## 검증
 

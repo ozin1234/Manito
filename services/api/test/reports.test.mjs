@@ -64,10 +64,10 @@ test("AI summarization requires explicit consent and sends text only", async () 
   const calls = [];
   globalThis.fetch = async (_url, init) => {
     calls.push(JSON.parse(init.body));
-    return Response.json({ output: [{ content: [{ type: "output_text", text: JSON.stringify({ title: "도로 파손", summary: "포트홀로 차량 급정거가 발생합니다." }) }] }] });
+    return Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify({ title: "도로 파손", summary: "포트홀로 차량 급정거가 발생합니다." }) }] } }] });
   };
   try {
-    const config = { key: apiKey, reportsDir: dir, openaiApiKey: "test-only-key" };
+    const config = { key: apiKey, reportsDir: dir, geminiApiKey: "test-only-key" };
     const body = { category: "danger", description: "강릉역 앞 도로에 포트홀이 있어 차량이 급정거합니다.", lat: 37.764, lng: 128.9, photoDataUrl: jpeg };
     const noConsent = await handle(request("/v1/reports", { method: "POST", body: JSON.stringify(body) }), config);
     assert.equal((await noConsent.json()).report.summarySource, "rule_based");
@@ -75,7 +75,7 @@ test("AI summarization requires explicit consent and sends text only", async () 
     const withConsent = await handle(request("/v1/reports", { method: "POST", body: JSON.stringify({ ...body, allowAiProcessing: true }) }), config);
     assert.equal((await withConsent.json()).report.summarySource, "ai");
     assert.equal(calls.length, 1);
-    assert.equal(calls[0].store, false);
+    assert.equal(calls[0].generationConfig.responseMimeType, "application/json");
     assert.ok(!JSON.stringify(calls[0]).includes("base64"));
   } finally {
     globalThis.fetch = originalFetch;

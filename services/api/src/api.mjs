@@ -5,6 +5,7 @@ import { validPoint } from "./geo.mjs";
 import { ApiError, matchTrace, planRoute, searchPlaces } from "./providers.mjs";
 import { getTraffic } from "./traffic.mjs";
 import { createReport, getReportPhoto, listReports } from "./reports.mjs";
+import { assistantStatus, assistantTurn, commitAssistant } from "./assistant.mjs";
 
 const riskFeed = JSON.parse(readFileSync(fileURLToPath(new URL("./risk-feed.json", import.meta.url)), "utf8"));
 const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" };
@@ -65,6 +66,10 @@ export async function handle(request, config) {
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/v1"))
       return json({ name: "G-ROAD Independent API", version: "1", authentication: "Bearer key", roadSource: "OpenStreetMap", satelliteSource: "ESA WorldCover 2021 / Copernicus Sentinel-2", endpoints: ["GET /v1/places", "POST /v1/routes/driving", "POST /v1/navigation/replan", "POST /v1/navigation/match", "GET /v1/risk/segments", "GET /v1/traffic/segments", "GET /v1/reports", "POST /v1/reports", "GET /v1/reports/{id}/photo", "GET /v1/tiles/{z}/{x}/{y}.png", "GET /v1/tiles/satellite/{z}/{x}/{y}.png"] });
     if (!authorized(request, config.key)) return problem("UNAUTHORIZED", "유효한 G-ROAD API 키가 필요합니다.", 401);
+
+    if (url.pathname === "/v1/assistant/status" && request.method === "GET") return json(assistantStatus(config));
+    if (url.pathname === "/v1/assistant/chat" && request.method === "POST") return json(await assistantTurn(await bodyJson(request, 4_300_000), config));
+    if (url.pathname === "/v1/assistant/commit" && request.method === "POST") return json(await commitAssistant(await bodyJson(request), config), 201);
 
     if (url.pathname === "/v1/reports" && request.method === "GET") {
       const limit = Number(url.searchParams.get("limit") ?? "100");

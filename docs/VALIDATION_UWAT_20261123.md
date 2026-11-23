@@ -1,0 +1,42 @@
+# 우왓 Gemini 업그레이드 검증
+
+기준: 2026-11-23, `feat/uwat-multimodal-rag`, 원격 main `6f462e4`.
+
+## 1차 검증
+
+- 별도 제보 입력 폼을 대화로 통합했고 기존 지도·경로·GPS·사진 저장 API는 유지했다.
+- Gemini 요청은 서버 `GEMINI_API_KEY`만 읽는다. 브라우저 프록시는 내부 API 키를 서버에서 붙인다. `.env.example` 값은 비워 둔다.
+- 실제 BM25 검색 자료와 출처, 내부 분류와 공식 기관 지침을 구분한다. 사진 판독 결과가 자동 기관 접수로 이어지지 않는다.
+- 확인 토큰·초안 버전·명시적 동의가 있어야 지도에 저장한다. 설명·위치·사진 변경 시 기존 확인을 무효화한다.
+- 원본 GROAD와 잇다 환경 파일은 수정하지 않았다. Manito의 별도 볼륨을 사용하며 새 외부 의존성은 추가하지 않았다.
+
+## 2차 실행 결과
+
+| 검사 | 결과 |
+| --- | --- |
+| `node --run test` | 26개 통과. Gemini HTTP 응답은 모의 데이터 |
+| TypeScript `tsc --noEmit` | 통과 |
+| `node --run build` | 통과 |
+| `python scripts/check_repository.py` | 통과 |
+| `git diff --check` | 통과 |
+| 로컬 웹 프록시 `assistant/status`·`reports` | HTTP 200 확인, 제공자 Gemini·설정 누락 상태 확인 |
+| 키 없는 실제 chat 요청 | HTTP 503 `AI_NOT_CONFIGURED`, 가짜 답변·저장 없음 |
+| 빌드 결과의 브라우저 화면 | Gemini 설정 안내·대화 화면 확인. 운전 중 선택 시 사진·텍스트 입력이 사라짐 |
+| 기존 GROAD API | 별도 8788 포트의 health HTTP 200 확인 |
+
+개발 모드의 브라우저 미리보기에서 가상 모듈을 불러오지 못하는 오류와 스타일 누락이 관찰됐다. 같은 소스의 프로덕션 빌드 미리보기에서는 스타일과 대화 화면이 로드됐다. 개발 모드 오류까지 해결했다고 주장하지 않는다. 기존 Lucide 최적화·Leaflet 이미지 경로·Vinext 경로 분류 경고는 빌드를 실패시키지 않았다.
+
+## 기존 Gemini 키 재사용 확인
+
+사용자 요청에 따라 잇다의 로컬 서버 설정·인계 ZIP을 읽었다. Gemini 키 값은 없고 Google TTS 키만 있었다. 해당 Google 키로 Gemini 모델 목록을 조회했으나 HTTP 403 `PERMISSION_DENIED`가 반환되어 Manito에 복사하지 않았다.
+
+이어 `bangjeongwoo1/datathon5`의 현재 main `f3083a95e115`와 전체 10개 브랜치에서 고유 코드·설정·문서 blob 297개를 확인했다. 읽기 오류는 없었고, 사용 가능한 실제 Gemini 인증키를 찾지 못했다. GitHub Actions·배포 환경에 별도로 저장된 비밀 값이나 과거 전체 Git 이력을 조회한 것은 아니다. 키 값·원본 환경 파일 내용은 출력하지 않았다.
+
+## 미검증 사항
+
+- 실제 Gemini 사진 분류·대화 품질·응답 시간·비용
+- Android/iPhone 마이크·알림음·TTS·GPS와 브라우저 권한
+- 외부 HTTPS 운영 환경, 계정별 권한, 보관 파일 정리 정책
+- 기관 공식 접수·회신
+
+자동 테스트 통과를 실제 모델 성능이나 휴대폰 실사용 검증 완료로 표시하지 않는다. 실행·설정 방법은 `UWAT_GEMINI.md`를 따른다.

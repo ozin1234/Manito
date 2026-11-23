@@ -15,6 +15,8 @@ for (const [key, value] of Object.entries({ MANITO_WEB_PORT: "5174", MANITO_API_
   if (!configured[key]) additions[key] = value;
 }
 if (!configured.GROAD_API_KEY) additions.GROAD_API_KEY = randomBytes(32).toString("hex");
+if (!Object.hasOwn(configured, "GEMINI_API_KEY")) additions.GEMINI_API_KEY = "";
+if (!configured.UWAT_MODEL) additions.UWAT_MODEL = "gemini-3.8-flash";
 const networkIndex = process.argv.indexOf("--maps-network");
 if (networkIndex !== -1) {
   const network = process.argv[networkIndex + 1];
