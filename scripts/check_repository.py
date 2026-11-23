@@ -23,6 +23,7 @@ REQUIRED = (
 SECRET_PATTERNS = (
     re.compile(r"\bgsk_[A-Za-z0-9]{20,}\b"),
     re.compile(r"\bAIza[0-9A-Za-z_-]{30,}\b"),
+    re.compile(r"\bAQ\.[0-9A-Za-z_-]{30,}\b"),
     re.compile(r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{30,}\b"),
     re.compile(r"\bgithub_pat_[A-Za-z0-9_]{40,}\b"),
     re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{30,}\b"),

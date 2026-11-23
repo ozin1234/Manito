@@ -137,6 +137,17 @@ test("Gemini quota, refusal and transport failures stay explicit and never save 
   assert.deepEqual(await readdir(folder), []);
 }));
 
+test("Gemini overload is a temporary outage and an unavailable model is a configuration error", async () => environment(async (config) => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return Response.json({ error: { message: "high demand" } }, { status: 503 }); };
+  let result = await send(config, "chat", body());
+  assert.equal(result.status, 503); assert.equal((await result.json()).error.code, "AI_UNAVAILABLE"); assert.equal(calls, 2);
+  calls = 0;
+  globalThis.fetch = async () => { calls++; return Response.json({}, { status: 404 }); };
+  result = await send(config, "chat", body());
+  assert.equal(result.status, 503); assert.equal((await result.json()).error.code, "AI_MODEL_ERROR"); assert.equal(calls, 1);
+}));
+
 test("Gemini thought parts are not returned as the user's answer", async () => environment(async (config) => {
   globalThis.fetch = async () => Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: "private internal reasoning", thought: true }, { text: JSON.stringify(analysis()) }] } }] });
   const result = await send(config, "chat", body());

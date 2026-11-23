@@ -14,6 +14,8 @@ export async function generateGeminiJson({ key, model = DEFAULT_GEMINI_MODEL, co
   }
   if ([401, 403].includes(response.status)) throw new ApiError("AI_AUTH_ERROR", "서버의 Gemini API 키 또는 해당 프로젝트 권한을 확인해 주세요.", 503);
   if (response.status === 429) throw new ApiError("AI_RATE_LIMIT", "Gemini 요청 한도에 도달했습니다. 잠시 후 다시 요청해 주세요.", 429);
+  if (response.status >= 500) throw new ApiError("AI_UNAVAILABLE", "Gemini 서버가 일시적으로 요청을 처리하지 못했습니다. 입력을 유지하고 잠시 후 다시 요청해 주세요.", 503);
+  if (response.status === 404) throw new ApiError("AI_MODEL_ERROR", "설정한 Gemini 모델을 사용할 수 없습니다. 서버의 UWAT_MODEL을 확인해 주세요.", 503);
   if (!response.ok) throw new ApiError("AI_PROVIDER_ERROR", "Gemini 모델 ID와 요청 설정을 확인해야 합니다. 임의 판단으로 대신 저장하지 않았습니다.", 502);
   let result;
   try { result = await response.json(); } catch { throw new ApiError("AI_RESPONSE_INVALID", "Gemini 응답을 읽지 못했습니다.", 502); }
