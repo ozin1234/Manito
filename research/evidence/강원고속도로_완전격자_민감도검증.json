@@ -1,0 +1,358 @@
+{
+  "design": "complete segment-date-hour grid; missing lagged traffic retained natively",
+  "panel_rows": 590016,
+  "segments": 48,
+  "accident_events": 558,
+  "positive_rows": 555,
+  "traffic_missing_rates": {
+    "lag2h_log_mean_flow": 0.03199743735763098,
+    "lag2h_weighted_speed_kmh": 0.034538046425859635,
+    "lag2h_congestion_rate": 0.034538046425859635
+  },
+  "modeling": {
+    "split_rows": {
+      "tune_2023": 173760,
+      "validation_2024": 209616,
+      "train_2023_2024": 383376,
+      "test_2025": 206640
+    },
+    "split_positives": {
+      "tune_2023": 132,
+      "validation_2024": 234,
+      "train_2023_2024": 366,
+      "test_2025": 189
+    },
+    "models": {
+      "baseline": {
+        "features": [
+          "hour_sin",
+          "hour_cos",
+          "month_sin",
+          "month_cos",
+          "dow_sin",
+          "dow_cos",
+          "weekend",
+          "segment_start_km",
+          "segment_x",
+          "segment_y",
+          "route_50",
+          "route_55",
+          "route_60",
+          "route_65"
+        ],
+        "selected_params": {
+          "max_leaf_nodes": 7,
+          "learning_rate": 0.05,
+          "max_iter": 150,
+          "min_samples_leaf": 80,
+          "l2_regularization": 2.0
+        },
+        "validation_2024": {
+          "roc_auc": 0.7171720734204615,
+          "average_precision": 0.0035206001235885583,
+          "log_loss": 0.008404982211053345,
+          "brier": 0.0011142312102151131,
+          "top1pct_recall": 0.06837606837606838,
+          "top1pct_lift": 6.837606837606838,
+          "mean_predicted_risk": 0.0007551658742912296,
+          "observed_rate": 0.0011163269979390885
+        },
+        "holdout_2025": {
+          "roc_auc": 0.7163017966598477,
+          "average_precision": 0.0031018583683593164,
+          "log_loss": 0.007034378301670212,
+          "brier": 0.0009131556797740161,
+          "top1pct_recall": 0.0582010582010582,
+          "top1pct_lift": 5.82010582010582,
+          "mean_predicted_risk": 0.0009394996572644948,
+          "observed_rate": 0.0009146341463414635
+        }
+      },
+      "road": {
+        "features": [
+          "hour_sin",
+          "hour_cos",
+          "month_sin",
+          "month_cos",
+          "dow_sin",
+          "dow_cos",
+          "weekend",
+          "segment_start_km",
+          "segment_x",
+          "segment_y",
+          "route_50",
+          "route_55",
+          "route_60",
+          "route_65",
+          "lanes_mean",
+          "max_spd_mean",
+          "tunnel_rate",
+          "bridge_rate",
+          "ramp_rate",
+          "vds_length_mean_m",
+          "sensor_count"
+        ],
+        "selected_params": {
+          "max_leaf_nodes": 7,
+          "learning_rate": 0.05,
+          "max_iter": 150,
+          "min_samples_leaf": 80,
+          "l2_regularization": 2.0
+        },
+        "validation_2024": {
+          "roc_auc": 0.7289264348717883,
+          "average_precision": 0.003408577021306133,
+          "log_loss": 0.00836878479835254,
+          "brier": 0.001114062256449114,
+          "top1pct_recall": 0.038461538461538464,
+          "top1pct_lift": 3.8461538461538463,
+          "mean_predicted_risk": 0.0007556734713322815,
+          "observed_rate": 0.0011163269979390885
+        },
+        "holdout_2025": {
+          "roc_auc": 0.7176132138302338,
+          "average_precision": 0.0026881105549533615,
+          "log_loss": 0.007032914681784908,
+          "brier": 0.0009131754264242101,
+          "top1pct_recall": 0.05291005291005291,
+          "top1pct_lift": 5.29100529100529,
+          "mean_predicted_risk": 0.0009422099891277778,
+          "observed_rate": 0.0009146341463414635
+        }
+      },
+      "traffic": {
+        "features": [
+          "hour_sin",
+          "hour_cos",
+          "month_sin",
+          "month_cos",
+          "dow_sin",
+          "dow_cos",
+          "weekend",
+          "segment_start_km",
+          "segment_x",
+          "segment_y",
+          "route_50",
+          "route_55",
+          "route_60",
+          "route_65",
+          "lag2h_log_mean_flow",
+          "lag2h_weighted_speed_kmh",
+          "lag2h_congestion_rate"
+        ],
+        "selected_params": {
+          "max_leaf_nodes": 7,
+          "learning_rate": 0.05,
+          "max_iter": 150,
+          "min_samples_leaf": 80,
+          "l2_regularization": 2.0
+        },
+        "validation_2024": {
+          "roc_auc": 0.7165286557175545,
+          "average_precision": 0.003766771947650226,
+          "log_loss": 0.008418597518698025,
+          "brier": 0.0011141821080226932,
+          "top1pct_recall": 0.0811965811965812,
+          "top1pct_lift": 8.11965811965812,
+          "mean_predicted_risk": 0.0007520397907026763,
+          "observed_rate": 0.0011163269979390885
+        },
+        "holdout_2025": {
+          "roc_auc": 0.7133400782111614,
+          "average_precision": 0.002969676755123108,
+          "log_loss": 0.007014334752586012,
+          "brier": 0.0009130135245373628,
+          "top1pct_recall": 0.06878306878306878,
+          "top1pct_lift": 6.878306878306878,
+          "mean_predicted_risk": 0.0009697847536957757,
+          "observed_rate": 0.0009146341463414635
+        }
+      },
+      "weather": {
+        "features": [
+          "hour_sin",
+          "hour_cos",
+          "month_sin",
+          "month_cos",
+          "dow_sin",
+          "dow_cos",
+          "weekend",
+          "segment_start_km",
+          "segment_x",
+          "segment_y",
+          "route_50",
+          "route_55",
+          "route_60",
+          "route_65",
+          "lag2h_temperature_mean_c",
+          "lag2h_rain_station_hour_rate",
+          "lag2h_snow_station_hour_rate",
+          "lag2h_wind_mean_ms",
+          "lag2h_low_visibility_rate",
+          "lag2h_freezing_wet_rate"
+        ],
+        "selected_params": {
+          "max_leaf_nodes": 7,
+          "learning_rate": 0.05,
+          "max_iter": 150,
+          "min_samples_leaf": 80,
+          "l2_regularization": 2.0
+        },
+        "validation_2024": {
+          "roc_auc": 0.7182111099926385,
+          "average_precision": 0.003338713739737251,
+          "log_loss": 0.00842691350931322,
+          "brier": 0.001114320488704901,
+          "top1pct_recall": 0.05982905982905983,
+          "top1pct_lift": 5.982905982905983,
+          "mean_predicted_risk": 0.000757383180840443,
+          "observed_rate": 0.0011163269979390885
+        },
+        "holdout_2025": {
+          "roc_auc": 0.70837126013657,
+          "average_precision": 0.0025970099431329744,
+          "log_loss": 0.00706210001417532,
+          "brier": 0.000913272096160521,
+          "top1pct_recall": 0.037037037037037035,
+          "top1pct_lift": 3.7037037037037033,
+          "mean_predicted_risk": 0.000945114356460671,
+          "observed_rate": 0.0009146341463414635
+        }
+      },
+      "road_weather_traffic": {
+        "features": [
+          "hour_sin",
+          "hour_cos",
+          "month_sin",
+          "month_cos",
+          "dow_sin",
+          "dow_cos",
+          "weekend",
+          "segment_start_km",
+          "segment_x",
+          "segment_y",
+          "route_50",
+          "route_55",
+          "route_60",
+          "route_65",
+          "lanes_mean",
+          "max_spd_mean",
+          "tunnel_rate",
+          "bridge_rate",
+          "ramp_rate",
+          "vds_length_mean_m",
+          "sensor_count",
+          "lag2h_temperature_mean_c",
+          "lag2h_rain_station_hour_rate",
+          "lag2h_snow_station_hour_rate",
+          "lag2h_wind_mean_ms",
+          "lag2h_low_visibility_rate",
+          "lag2h_freezing_wet_rate",
+          "lag2h_log_mean_flow",
+          "lag2h_weighted_speed_kmh",
+          "lag2h_congestion_rate"
+        ],
+        "selected_params": {
+          "max_leaf_nodes": 7,
+          "learning_rate": 0.05,
+          "max_iter": 150,
+          "min_samples_leaf": 80,
+          "l2_regularization": 2.0
+        },
+        "validation_2024": {
+          "roc_auc": 0.7412450433089743,
+          "average_precision": 0.003901213925370331,
+          "log_loss": 0.008365865371913767,
+          "brier": 0.00111414672060378,
+          "top1pct_recall": 0.07264957264957266,
+          "top1pct_lift": 7.264957264957266,
+          "mean_predicted_risk": 0.0007332966819693623,
+          "observed_rate": 0.0011163269979390885
+        },
+        "holdout_2025": {
+          "roc_auc": 0.7284545836478257,
+          "average_precision": 0.0027321182909189157,
+          "log_loss": 0.007015984835479591,
+          "brier": 0.0009134130428079161,
+          "top1pct_recall": 0.05291005291005291,
+          "top1pct_lift": 5.29100529100529,
+          "mean_predicted_risk": 0.000983594491927766,
+          "observed_rate": 0.0009146341463414635
+        }
+      }
+    },
+    "day_cluster_bootstrap_20000": {
+      "road": {
+        "logloss_difference_vs_baseline": -1.4636198853022191e-06,
+        "logloss_95ci": [
+          -3.812400747332444e-05,
+          3.587829032970881e-05
+        ],
+        "logloss_improvement_probability": 0.537,
+        "brier_difference_vs_baseline": 1.9746650194054387e-08,
+        "brier_95ci": [
+          -1.2313477029723787e-07,
+          1.6093773936985857e-07
+        ],
+        "brier_improvement_probability": 0.39225
+      },
+      "traffic": {
+        "logloss_difference_vs_baseline": -2.0043549084198788e-05,
+        "logloss_95ci": [
+          -8.114475531581176e-05,
+          3.523659971108454e-05
+        ],
+        "logloss_improvement_probability": 0.7536,
+        "brier_difference_vs_baseline": -1.4215523665331762e-07,
+        "brier_95ci": [
+          -5.107134069629232e-07,
+          1.9010494364409013e-07
+        ],
+        "brier_improvement_probability": 0.79035
+      },
+      "weather": {
+        "logloss_difference_vs_baseline": 2.7721712505109218e-05,
+        "logloss_95ci": [
+          -8.436524058929106e-06,
+          6.328614592115288e-05
+        ],
+        "logloss_improvement_probability": 0.06655,
+        "brier_difference_vs_baseline": 1.1641638650490085e-07,
+        "brier_95ci": [
+          -5.2317241829648217e-08,
+          2.924388108984797e-07
+        ],
+        "brier_improvement_probability": 0.0907
+      },
+      "road_weather_traffic": {
+        "logloss_difference_vs_baseline": -1.839346619062047e-05,
+        "logloss_95ci": [
+          -8.670153071300717e-05,
+          4.738248804755548e-05
+        ],
+        "logloss_improvement_probability": 0.7013,
+        "brier_difference_vs_baseline": 2.5736303390001503e-07,
+        "brier_95ci": [
+          -2.0896798583953945e-07,
+          6.895090093725224e-07
+        ],
+        "brier_improvement_probability": 0.13245
+      }
+    }
+  },
+  "full_vs_baseline": {
+    "logloss_difference_vs_baseline": -1.839346619062047e-05,
+    "logloss_95ci": [
+      -8.670153071300717e-05,
+      4.738248804755548e-05
+    ],
+    "logloss_improvement_probability": 0.7013,
+    "brier_difference_vs_baseline": 2.5736303390001503e-07,
+    "brier_95ci": [
+      -2.0896798583953945e-07,
+      6.895090093725224e-07
+    ],
+    "brier_improvement_probability": 0.13245
+  },
+  "conclusion": "does_not_support_reject_H0"
+}

@@ -65,14 +65,16 @@ def main():
             if any(pattern.search(line) for pattern in SECRET_PATTERNS):
                 failures.append(f"Possible credential detected: {name}:{line_number}")
 
-    example = ROOT / ".env.example"
-    if example.is_file():
+    for name in names:
+        example = ROOT / name
+        if example.name != ".env.example" or not example.is_file():
+            continue
         for line_number, line in enumerate(example.read_text(encoding="utf-8").splitlines(), start=1):
             text = line.strip()
             if not text or text.startswith("#"):
                 continue
             if "=" not in text or text.split("=", 1)[1].strip() not in ("", '""', "''"):
-                failures.append(f"Environment example must have empty values: .env.example:{line_number}")
+                failures.append(f"Environment example must have empty values: {name}:{line_number}")
 
     for name in (".env", ".env.local", ".secrets/key.txt", "node_modules/example.js", "data/private/example.csv"):
         if git("check-ignore", "--no-index", "--quiet", "--", name).returncode:

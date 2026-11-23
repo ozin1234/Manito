@@ -1,0 +1,23 @@
+/* SEED primitives stay on their native recipes; this adapts the surrounding G-ROAD surfaces. */
+.seed-groad {
+  --groad-danger: #ec4c5c;
+  --groad-near-miss: #fa9c37;
+  --groad-caution: #edc94d;
+  --groad-ink: #192544;
+  --groad-surface: #fffdf9;
+  color: var(--groad-ink);
+  background: var(--groad-surface);
+  font-family: var(--seed-font-family);
+}
+
+.seed-groad .seed-card {
+  border: 1px solid #e7e9ee;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(21 35 69 / 7%);
+}
+
+.seed-groad :is(button, input, textarea):focus-visible {
+  outline: 3px solid #6383ff;
+  outline-offset: 2px;
+}

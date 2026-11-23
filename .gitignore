@@ -27,6 +27,10 @@ build/
 coverage/
 .next/
 .turbo/
+.sites-runtime/
+.vinext/
+.wrangler/
+*.tsbuildinfo
 *.log
 
 # Local datasets, model weights, experiments and outputs
@@ -34,6 +38,7 @@ coverage/
 data/raw/
 data/private/
 models/checkpoints/
+services/api/data/
 outputs/
 *.sqlite
 *.sqlite3

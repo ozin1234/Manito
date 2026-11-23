@@ -9,11 +9,12 @@
 | Git | 2.56.0.windows.4 |
 | Node.js | 24.22.3 |
 | Python | 3.10.7 |
-| npm | 현재 터미널 PATH에서 찾지 못함 |
+| pnpm | 잠금 파일과 일치하는 11.25.0으로 웹 의존성 설치 |
+| npm | 기본 터미널 PATH에서 찾지 못함, 로컬 명령은 Node 스크립트 사용 |
 | GitHub CLI | 현재 터미널 PATH에서 찾지 못함 |
-| Docker | 실행 파일 존재, 엔진 실행 여부는 미확인 |
+| Docker | 엔진 29.6.2 응답, 기존 지도 컨테이너 실행 확인 |
 
-이 표는 현재 PC의 상태다. Manito 서비스의 필수 런타임이나 기술 스택을 의미하지 않는다. 주제 선정 후 프로젝트에 필요한 도구만 설정한다.
+Manito는 Node.js 24와 pnpm 11.25.0을 사용한다. 웹은 React 19.2.6·TypeScript 5.9.3·Vinext 1.0.0-beta.5·Vite 8.0.13·Leaflet이며 독립 API는 추가 패키지 없는 Node.js HTTP 서버다. Docker는 지도 서비스를 공유하는 선택형 실행에 사용한다.
 
 ## GitHub
 
