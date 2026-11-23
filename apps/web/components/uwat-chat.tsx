@@ -7,14 +7,18 @@ import { locationErrorMessage, locationPreflight } from "@/lib/location-diagnost
 import { prepareReportPhoto } from "@/lib/report-photo";
 import { voiceChoice, type UwatLocation, type UwatReply } from "@/lib/uwat-types";
 import { useUwatVoice } from "@/hooks/use-uwat-voice";
+import { reportTopics, sameConversationTopic, type ReportTopic } from "@/lib/report-topics";
 
 type Message = { role: "assistant" | "user" | "system"; text: string };
 const labels = { danger: "위험지역", near_miss: "아차!지역", caution: "단순주의지역" };
-export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAttention }: {
-  open: boolean; point: { lat: number; lng: number } | null; onClose: () => void;
+export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved, onAttention, onBusyChange }: {
+  open: boolean; topic: ReportTopic; point: { lat: number; lng: number } | null; onClose: () => void;
   onPickLocation: () => void; onSaved: (report: SafetyReport) => void; onAttention: (text: string) => void;
+  onBusyChange: (busy: boolean) => void;
 }) {
-  const [messages, setMessages] = useState<Message[]>([{ role: "assistant", text: "우왓이에요. 도로에서 본 상황을 말하거나, 정차 후 사진을 남겨 주세요. 제가 근거를 찾아 초안을 만들고 필요한 것만 여쭤볼게요." }]);
+  const topicInfo = reportTopics.find((item) => item.id === topic)!;
+  const welcome = `우왓이에요. ${topicInfo.label}에 관해 본 상황을 말하거나, 정차 후 사진을 남겨 주세요. 근거를 찾아 확인하고 필요한 것만 여쭤볼게요.`;
+  const [messages, setMessages] = useState<Message[]>([{ role: "assistant", text: welcome }]);
   const [input, setInput] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [location, setLocation] = useState<UwatLocation | null>(null);
@@ -27,6 +31,8 @@ export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAtte
   const [paused, setPaused] = useState(false);
   const [status, setStatus] = useState<{ configured: boolean; model: string } | null>(null);
   const busyRef = useRef(false), replyRef = useRef(reply); replyRef.current = reply;
+  const topicRef = useRef(topic); topicRef.current = topic;
+  const previousTopic = useRef(topic);
   const bodyRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const actionRef = useRef<(text: string) => Promise<void>>(async () => {});
@@ -48,6 +54,14 @@ export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAtte
     } catch { setError("우왓 서버 상태를 확인하지 못했습니다. 연결을 확인해 주세요."); }
   };
   useEffect(() => { if (open) void refreshStatus(); }, [open]);
+  useEffect(() => { onBusyChange(busy || locating); }, [busy, locating, onBusyChange]);
+  useEffect(() => {
+    if (previousTopic.current === topic) return;
+    previousTopic.current = topic;
+    replyRef.current = null; setReply(null); setPaused(false); setError("");
+    setMessages([{ role: "assistant", text: welcome }]);
+    if (voice.enabled) voice.say(`${topicInfo.label} 분야로 바꿨어요. 어떤 상황을 보셨나요?`);
+  }, [topic]);
   useEffect(() => {
     if (point) { setLocation({ ...point, locationSource: "map", locationAccuracyM: null, locationCapturedAt: null }); setPaused(false); invalidateDraft(); }
   }, [point]);
@@ -77,25 +91,28 @@ export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAtte
     if (!consent) { setError("사진·대화를 Google Gemini로 보내는 AI 처리에 먼저 동의해 주세요."); return; }
     if (!status?.configured) { setError("실제 AI 대화에는 서버 GEMINI_API_KEY 설정이 필요합니다. 키를 넣은 뒤 서버를 다시 실행하고 연결 상태를 새로 확인해 주세요."); return; }
     busyRef.current = true; setBusy(true); setPaused(false); setError(""); voice.setBusy(true); voice.unlock();
+    const requestTopic = topic;
     try {
       let valueLocation = overrideLocation === undefined ? location : overrideLocation;
       if (driving && !valueLocation) {
         voice.say("현장 위치를 확인할게요. 위치를 받지 못하면 저장을 보류할 수 있어요.");
         valueLocation = await locate();
       }
-      const response = await fetch("/api/v1/assistant/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: reply?.sessionId, message: text, selection, photoDataUrl: photo ?? "", ...(valueLocation ? { location: valueLocation } : {}), allowAiProcessing: true, drivingMode: driving }) });
+      const response = await fetch("/api/v1/assistant/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: requestTopic, sessionId: sameConversationTopic(replyRef.current, requestTopic) ? replyRef.current?.sessionId : undefined, message: text, selection, photoDataUrl: photo ?? "", ...(valueLocation ? { location: valueLocation } : {}), allowAiProcessing: true, drivingMode: driving }) });
       const data = await response.json() as UwatReply & { error?: { message?: string } };
+      if (topicRef.current !== requestTopic) return;
       if (!response.ok) throw new Error(data.error?.message ?? "AI 답변을 받지 못했습니다.");
       const value = data as UwatReply;
+      if (!sameConversationTopic(value, requestTopic)) throw new Error("선택한 분야와 AI 대화가 일치하지 않습니다. 서버 업데이트를 확인해 주세요.");
       setReply(value); replyRef.current = value; setInput("");
       setMessages((current) => [...current, { role: "user", text: text || (photo ? "첨부 사진을 확인해 주세요." : "선택한 답을 확인해 주세요.") }, { role: "assistant", text: value.reply }]);
       speakResult(value);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "요청에 실패했습니다. 입력은 유지했어요."); voice.notify(); voice.say("연결이나 처리 오류로 판단을 완료하지 못했어요. 자동 저장하지 않았고 입력은 유지했어요. 정차 후 다시 확인해 주세요."); }
+    } catch (cause) { if (topicRef.current !== requestTopic) return; setError(cause instanceof Error ? cause.message : "요청에 실패했습니다. 입력은 유지했어요."); voice.notify(); voice.say("연결이나 처리 오류로 판단을 완료하지 못했어요. 자동 저장하지 않았고 입력은 유지했어요. 정차 후 다시 확인해 주세요."); }
     finally { busyRef.current = false; setBusy(false); voice.setBusy(false); }
   };
   const commit = async () => {
     const value = replyRef.current;
-    if (busyRef.current || !value?.confirmationToken) return;
+    if (busyRef.current || !value?.confirmationToken || !sameConversationTopic(value, topicRef.current)) return;
     busyRef.current = true; setBusy(true); voice.setBusy(true); setError("");
     try {
       const response = await fetch("/api/v1/assistant/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: value.sessionId, revision: value.revision, confirmationToken: value.confirmationToken, confirmed: true }) });
@@ -133,8 +150,8 @@ export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAtte
     await voice.enable();
   };
   const question = reply?.question;
-  return <aside className={`sr-chat uwat-chat${driving ? " uwat-driving" : ""}`} aria-label="우왓 AI 도로 안전 대화" hidden={!open}>
-    <header><span className="sr-chat-face">!</span><div><strong>우왓</strong><small>{status?.configured ? "사진·대화와 근거를 함께 확인해요" : "AI 서버 연결 준비"}</small></div><button type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={22}/></button></header>
+  return <aside className={`sr-chat uwat-chat${driving ? " uwat-driving" : ""}`} aria-label={`우왓 AI ${topicInfo.label} 대화`} hidden={!open}>
+    <header><span className="sr-chat-face">!</span><div><strong>우왓 <span className="uwat-topic">{topicInfo.label}</span></strong><small>{status?.configured ? "사진·대화와 근거를 함께 확인해요" : "AI 서버 연결 준비"}</small></div><button type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={22}/></button></header>
     <div className="uwat-mode" role="group" aria-label="이용 상태"><button type="button" aria-pressed={!driving} onClick={() => setDriving(false)}>정차·동승자</button><button type="button" aria-pressed={driving} onClick={() => setDriving(true)}>운전 중 · 음성</button></div>
     <div className="uwat-state" role="status" aria-live="polite"><span>{busy ? "사진·대화와 근거를 확인 중이에요" : locating ? "현재 GPS를 측정하고 있어요" : voice.speaking ? "우왓이 음성으로 안내하고 있어요" : voice.listening ? "듣고 있어요. 말씀해 주세요" : paused ? "초안을 보류했어요" : question ? "확인을 기다리고 있어요" : "사진이나 상황을 남겨 주세요"}</span>{busy && <span className="uwat-spinner" aria-hidden="true"/>}</div>
     <div className="sr-chat-messages uwat-messages" ref={bodyRef}>
@@ -143,7 +160,7 @@ export function UwatChat({ open, point, onClose, onPickLocation, onSaved, onAtte
       {photo && <div className="uwat-photo"><img src={photo} alt="AI와 확인할 현장 사진"/>{!driving && <button type="button" onClick={() => { setPhoto(null); invalidateDraft(); }}>사진 제거</button>}<small>EXIF를 제거한 사진 · 공개 저장 전</small></div>}
       {location && <div className="uwat-location"><MapPinned size={17}/><span>{location.locationSource === "gps" ? `GPS ±${Math.round(location.locationAccuracyM ?? 0)}m` : "직접 고른 지도 위치"}<small>{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</small></span>{!driving && reply?.phase === "needs_update" && <button type="button" disabled={busy} onClick={() => void turn("이 위치와 입력을 반영해 초안을 다시 확인해 주세요.")}>위치·입력 반영</button>}</div>}
       {reply?.analysis.observations.length ? <div className="uwat-evidence"><strong><Sparkles size={16}/>사진·설명에서 확인한 단서</strong><ul>{reply.analysis.observations.map((item, i) => <li key={i}>{item}</li>)}</ul></div> : null}
-      {reply?.analysis.ready && <div className="uwat-draft"><small>공개 전 확인할 초안</small><h3>{reply.analysis.title}</h3><p>{reply.analysis.summary}</p><span>{reply.analysis.category ? labels[reply.analysis.category] : "분류 확인 중"} · AI 제안</span><p className="uwat-reason">{reply.analysis.reason}</p><small>위치가 실제 현장과 일치하는지 확인해 주세요.</small></div>}
+      {reply?.analysis.ready && <div className="uwat-draft"><small>{topicInfo.label} · 공개 전 확인할 초안</small><h3>{reply.analysis.title}</h3><p>{reply.analysis.summary}</p><span>{reply.analysis.category ? labels[reply.analysis.category] : "분류 확인 중"} · AI 제안</span><p className="uwat-reason">{reply.analysis.reason}</p><small>위치가 실제 현장과 일치하는지 확인해 주세요.</small></div>}
       {question && !paused && <section className="uwat-question" aria-label="우왓 확인 질문"><strong><Volume2 size={17}/>{question.text}</strong>{driving ? <p>선택지는 음성으로 안내해요. 번호로 답하거나 “나중에”라고 말해 주세요.</p> : <div>{question.options.map((option, index) => <button type="button" key={option.id} disabled={busy} onClick={() => void choose(option.id)}>{index + 1}. {option.label}</button>)}</div>}{question.kind === "location" && !driving && <div><button type="button" disabled={busy || locating} onClick={async () => { const point = await locate(); if (point) await turn("현재 GPS 위치를 현장 위치 후보로 확인해 주세요.", undefined, point); }}>현재 GPS 확인</button><button type="button" onClick={onPickLocation}>지도에서 위치 고르기</button></div>}<button type="button" className="uwat-pause" onClick={pause}><Pause size={15}/>정차 후 이어가기</button></section>}
       {reply?.sources.length ? <details className="uwat-sources"><summary>판단에 참고한 근거 {reply.sources.length}개</summary>{reply.sources.map((source) => <div key={source.id}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a> : <span>{source.title}</span>}<small>{source.authority === "official" ? "공식 안내" : "Manito 내부 기준"} · {source.checkedAt} 확인</small></div>)}</details> : null}
       {(error || voice.error) && <div className="uwat-error" role="alert">{error || voice.error}</div>}

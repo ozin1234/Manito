@@ -20,6 +20,7 @@ test("reports persist a photo, retain original text, and never claim agency subm
     const report = (await created.json()).report;
     assert.equal(report.status, "draft");
     assert.equal(report.agencyStatus, "not_submitted");
+    assert.equal(report.topic, "road");
     assert.equal(report.summarySource, "rule_based");
     assert.equal(report.title, "도로 파손");
     assert.equal(report.description, body.description);
@@ -49,6 +50,7 @@ test("reports reject invalid coordinates, image type, and oversized text", async
       { category: "danger", description: "도로에 큰 포트홀이 있습니다", lat: 91, lng: 128.9 },
       { category: "danger", description: "도로에 큰 포트홀이 있습니다", lat: 37.7, lng: 128.9, photoDataUrl: "data:image/svg+xml;base64,PHN2Zz4=" },
       { category: "caution", description: "a".repeat(2001), lat: 37.7, lng: 128.9 },
+      { category: "caution", topic: "invalid", description: "생활 시설물의 불편을 확인했습니다.", lat: 37.7, lng: 128.9 },
       { category: "danger", description: "도로에 큰 포트홀이 있습니다", lat: 37.7, lng: 128.9, locationSource: "gps", locationAccuracyM: -1, locationCapturedAt: new Date().toISOString() },
     ]) {
       const response = await handle(request("/v1/reports", { method: "POST", body: JSON.stringify(body) }), config);

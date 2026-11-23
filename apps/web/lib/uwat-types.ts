@@ -1,9 +1,10 @@
 import type { SafetyReport } from "@/components/live-risk-map";
+import type { ReportTopic } from "./report-topics";
 
 export type UwatLocation = { lat: number; lng: number; locationSource: "gps" | "map"; locationAccuracyM: number | null; locationCapturedAt: string | null };
 export type UwatQuestion = { id: string; kind: "clarify" | "confirm" | "location"; text: string; options: Array<{ id: string; label: string }> };
 export type UwatReply = {
-  sessionId: string; revision: number; phase: string; reply: string;
+  sessionId: string; topic: ReportTopic; revision: number; phase: string; reply: string;
   analysis: { intent: string; uncertainty: string; observations: string[]; category: SafetyReport["category"] | null; title: string; summary: string; description: string; reason: string; ready: boolean };
   question: UwatQuestion | null; location: UwatLocation | null; hasPhoto: boolean;
   sources: Array<{ id: string; title: string; authority: "official" | "product"; url: string | null; checkedAt: string }>;

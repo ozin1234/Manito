@@ -4,6 +4,7 @@ import path from "node:path";
 import { validPoint } from "./geo.mjs";
 import { ApiError } from "./providers.mjs";
 import { DEFAULT_GEMINI_MODEL, generateGeminiJson } from "./gemini.mjs";
+import { validateTopic, REPORT_TOPICS } from "./topics.mjs";
 
 const CATEGORIES = new Set(["danger", "near_miss", "caution"]);
 const IMAGE_TYPES = new Map([
@@ -45,14 +46,14 @@ export function parsePhoto(dataUrl) {
   return { bytes, mime: match[1], extension: IMAGE_TYPES.get(match[1]).extension };
 }
 
-async function aiSummary(description, category, config) {
+async function aiSummary(description, category, topic, config) {
   if (!config.geminiApiKey) return null;
   try {
     const parsed = await generateGeminiJson({
       key: config.geminiApiKey,
       model: config.summaryModel || config.uwatModel || DEFAULT_GEMINI_MODEL,
-      systemInstruction: "도로 위험 설명을 한국어 제목과 한 문장 요약으로 정리한다. 입력에 없는 위치, 사고, 긴급성, 기관 접수 여부를 만들지 않는다. 제목 30자 이내, 요약 120자 이내로 한다.",
-      contents: [{ role: "user", parts: [{ text: `분류: ${category}\n설명: ${description}` }] }],
+      systemInstruction: "생활불편·도로·안전재난 설명을 한국어 제목과 한 문장 요약으로 정리한다. 입력에 없는 위치, 사고, 긴급성, 기관 접수 여부를 만들지 않는다. 제목 30자 이내, 요약 120자 이내로 한다.",
+      contents: [{ role: "user", parts: [{ text: `분야: ${REPORT_TOPICS[topic].label}\n위험 분류: ${category}\n설명: ${description}` }] }],
       schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" } }, required: ["title", "summary"], additionalProperties: false },
       timeoutMs: 15_000, maxOutputTokens: 2000,
     });
@@ -70,6 +71,7 @@ function filePaths(directory, id, extension) {
 export async function createReport(body, config, approvedAssistant = null) {
   if (!body || !CATEGORIES.has(body.category) || !validPoint({ lat: body.lat, lng: body.lng }))
     throw new ApiError("INVALID_REPORT", "위험 분류와 국내 위치 좌표를 확인해 주세요.", 400);
+  const topic = validateTopic(body.topic);
   const locationSource = body.locationSource === "gps" ? "gps" : "map";
   if (body.locationSource !== undefined && !["gps", "map"].includes(body.locationSource))
     throw new ApiError("INVALID_LOCATION", "위치 출처가 올바르지 않습니다.", 400);
@@ -80,12 +82,12 @@ export async function createReport(body, config, approvedAssistant = null) {
     throw new ApiError("INVALID_LOCATION", "GPS 정확도와 측정 시각을 확인해 주세요.", 400);
   const description = cleanDescription(body.description);
   const photo = parsePhoto(body.photoDataUrl);
-  const draft = approvedAssistant ? null : body.allowAiProcessing === true ? await aiSummary(description, body.category, config) : null;
-  const summary = approvedAssistant ? { title: approvedAssistant.title, summary: approvedAssistant.summary, summarySource: "llm_rag" } : draft ?? automaticDraft(description, body.category);
+  const draft = approvedAssistant ? null : body.allowAiProcessing === true ? await aiSummary(description, body.category, topic, config) : null;
+  const summary = approvedAssistant ? { title: approvedAssistant.title, summary: approvedAssistant.summary, summarySource: "llm_rag" } : draft ?? { ...automaticDraft(description, body.category), ...(topic !== "road" ? { title: `${REPORT_TOPICS[topic].label} 현장 정보` } : {}) };
   const id = approvedAssistant?.reportId ?? randomUUID();
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError("INVALID_REPORT_ID", "저장 번호를 확인할 수 없습니다.", 400);
   const report = {
-    id, category: body.category, ...summary, description,
+    id, topic, category: body.category, ...summary, description,
     lat: body.lat, lng: body.lng, locationSource, locationAccuracyM, locationCapturedAt,
     photoUrl: photo ? `/api/v1/reports/${id}/photo` : null,
     createdAt: new Date().toISOString(), status: "draft", agencyStatus: "not_submitted",

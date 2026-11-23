@@ -163,6 +163,39 @@ test("request validation prevents malformed pictures, unknown sessions and coord
   }
 }));
 
+test("selected topics reach Gemini, confirmation and stored reports without changing severity", async () => environment(async (config, folder) => {
+  let modelContext;
+  globalThis.fetch = async (_url, options) => {
+    const payload = JSON.parse(options.body);
+    modelContext = JSON.parse(payload.contents.at(-1).parts[0].text).context;
+    return response(ready());
+  };
+  for (const topic of ["living", "road", "safety"]) {
+    const first = await (await send(config, "chat", body({ topic }))).json();
+    assert.equal(first.topic, topic);
+    assert.equal(modelContext.selectedTopic.id, topic);
+    assert.ok(modelContext.references.some((reference) => reference.id === "manito-topics"));
+    const result = await send(config, "commit", { sessionId: first.sessionId, revision: first.revision, confirmationToken: first.confirmationToken, confirmed: true });
+    assert.equal(result.status, 201);
+    const saved = (await result.json()).report;
+    assert.equal(saved.topic, topic); assert.equal(saved.category, "danger");
+    assert.equal(saved.agencyStatus, "not_submitted");
+    assert.equal(JSON.parse(await readFile(path.join(folder, `${saved.id}.json`), "utf8")).topic, topic);
+  }
+}));
+
+test("invalid topics and cross-topic session reuse are rejected before an AI call", async () => environment(async (config) => {
+  globalThis.fetch = async () => response(ready());
+  const first = await (await send(config, "chat", body({ topic: "living" }))).json();
+  globalThis.fetch = async () => assert.fail("Topic validation must happen before calling Gemini");
+  for (const topic of ["politics", null, {}, "__proto__"]) {
+    const result = await send(config, "chat", body({ topic }));
+    assert.equal(result.status, 400); assert.equal((await result.json()).error.code, "INVALID_TOPIC");
+  }
+  const mismatch = await send(config, "chat", body({ topic: "safety", sessionId: first.sessionId }));
+  assert.equal(mismatch.status, 409); assert.equal((await mismatch.json()).error.code, "SESSION_TOPIC_MISMATCH");
+}));
+
 test("RAG retrieves from the corpus and notices a reviewed corpus update", async () => environment(async (_config, folder) => {
   const file = path.join(folder, "knowledge.json");
   const document = (id, text) => ({ id, title: id, text, authority: "product", url: null, checkedAt: "2026-11-23" });

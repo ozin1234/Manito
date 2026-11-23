@@ -36,7 +36,7 @@ export async function retrieveKnowledge(query, knowledgePath = defaultPath) {
     }
     return { ...row.document, score: Number(score.toFixed(5)) };
   }).sort((a, b) => b.score - a.score);
-  const required = new Set(["manito-photo-uncertainty", "manito-consent", "official-report-status"]);
+  const required = new Set(["manito-topics", "manito-photo-uncertainty", "manito-consent", "official-report-status"]);
   const chosen = [...ranked.filter((row) => required.has(row.id)), ...ranked.filter((row) => !required.has(row.id)).slice(0, 4)];
   return chosen;
 }
