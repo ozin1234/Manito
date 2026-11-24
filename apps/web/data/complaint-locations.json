@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "notice": "공개 민원 제목에 명시된 장소의 참고 좌표. 사건 현장 위치나 발생 여부를 확정하지 않음.",
+  "attribution": "© OpenStreetMap contributors, ODbL 1.0",
+  "locations": [
+    {
+      "complaintId": "public-chuncheon-69b79af7d7a9d510",
+      "matchedText": "온의동 풍물시장",
+      "lat": 37.86734,
+      "lng": 127.71739,
+      "label": "풍물시장 정류장 일대",
+      "precision": "place",
+      "sourceUrl": "https://www.openstreetmap.org/node/8446124337",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-8e8d24e3b767c8df",
+      "matchedText": "레고랜드",
+      "lat": 37.8856858,
+      "lng": 127.6992627,
+      "label": "레고랜드 일대",
+      "precision": "place",
+      "sourceUrl": "https://www.openstreetmap.org/way/478404825",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-4d87e2ccf522ed6c",
+      "matchedText": "김유정 레일바이크",
+      "lat": 37.816811,
+      "lng": 127.7132154,
+      "label": "김유정 레일바이크 탑승장 일대",
+      "precision": "place",
+      "sourceUrl": "https://www.openstreetmap.org/node/5971154685",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-3294da3feb3c9864",
+      "matchedText": "교동길",
+      "lat": 37.8815059,
+      "lng": 127.7361724,
+      "label": "교동길17번길 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/way/481182765",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-55195d091292461b",
+      "matchedText": "장학리",
+      "lat": 37.9074896,
+      "lng": 127.7567763,
+      "label": "장학리 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152461",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-b6f00de3e70cfb00",
+      "matchedText": "사암리",
+      "lat": 37.8250695,
+      "lng": 127.7941496,
+      "label": "사암리 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152446",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-8fd2d31104395674",
+      "matchedText": "학곡리",
+      "lat": 37.8260137,
+      "lng": 127.7556121,
+      "label": "학곡리 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152445",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-09374ce2efe66836",
+      "matchedText": "우두동",
+      "lat": 37.9064605,
+      "lng": 127.7388795,
+      "label": "우두동 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152525",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-chuncheon-5e364cbec5eebddd",
+      "matchedText": "우석중학교",
+      "lat": 37.8661929,
+      "lng": 127.7552951,
+      "label": "우석중학교 일대",
+      "precision": "place",
+      "sourceUrl": "https://www.openstreetmap.org/way/564305940",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-gangneung-council-5aefda4480074821",
+      "matchedText": "송정동",
+      "lat": 37.77913,
+      "lng": 128.93353,
+      "label": "송정동 시가지 일대",
+      "precision": "area",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152354",
+      "checkedAt": "2026-11-25"
+    },
+    {
+      "complaintId": "public-gangneung-council-eb902346c496cf78",
+      "matchedText": "청솔공원",
+      "lat": 37.832352,
+      "lng": 128.847486,
+      "label": "청솔공원 정류장 일대",
+      "precision": "place",
+      "sourceUrl": "https://www.openstreetmap.org/node/9295645744",
+      "checkedAt": "2026-11-25"
+    }
+  ]
+}

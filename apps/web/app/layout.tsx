@@ -6,6 +6,7 @@ import "./safety-map.css";
 import "./safety-app.css";
 import "./uwat-chat.css";
 import "./public-complaints.css";
+import "./neighborhood.css";
 
 export const metadata: Metadata = {
   title: "K-ROAD | 강원 생활불편·도로·안전재난",
