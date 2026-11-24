@@ -2,6 +2,12 @@
 
 사진으로 생활불편·도로·안전재난을 확인하고, 위치와 공개 여부를 확인한 뒤 현장 기록을 남기는 서비스입니다. GitHub 저장소 이름은 Manito입니다.
 
+## 운영 사이트
+
+**[K-ROAD 바로 열기](https://k-road-manito.hydroai4.chatgpt.site/)** — 로그인 없이 접속할 수 있는 운영 주소입니다. 관리자 기능은 별도 로그인이 필요합니다.
+
+웹과 API는 Sites의 Cloudflare Workers에 함께 배포되어 있습니다. GitHub Actions의 `Repository checks`는 코드 검사·테스트·빌드를 수행하며, 운영 배포는 별도로 진행합니다. 저장소 About의 Website와 Deployments의 `production`에서도 운영 주소를 확인할 수 있습니다. 아래 로컬 실행 주소는 개발용입니다.
+
 ## 현재 구현 방식
 
 1. 현장 사진을 선택하면 브라우저에서 크기를 줄이고 EXIF 위치 정보를 제거합니다. 설명 입력·마이크·음성 읽기 없이 사진만 서버로 보냅니다. Google Gemini 전송 동의는 먼저 받습니다.
