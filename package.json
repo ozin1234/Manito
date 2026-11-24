@@ -7,7 +7,7 @@
     "setup": "node scripts/setup.mjs",
     "dev": "node scripts/dev.mjs",
     "build": "node scripts/web.mjs build",
-    "test": "node --test services/api/test/api.test.mjs services/api/test/reports.test.mjs services/api/test/assistant.test.mjs services/api/test/admin.test.mjs apps/web/tests/navigation.test.mjs apps/web/tests/alert-sound.test.mjs apps/web/tests/report-topics.test.mjs apps/web/tests/public-complaints.test.mjs",
+    "test": "node --test services/api/test/api.test.mjs services/api/test/reports.test.mjs services/api/test/assistant.test.mjs services/api/test/assistant-conflicts.test.mjs services/api/test/admin.test.mjs apps/web/tests/navigation.test.mjs apps/web/tests/alert-sound.test.mjs apps/web/tests/report-topics.test.mjs apps/web/tests/public-complaints.test.mjs",
     "check": "python scripts/check_repository.py"
   }
 }

@@ -144,6 +144,10 @@ export async function assistantTurn(body, config) {
       message = `이전 질문: ${session.question.text}\n사용자가 선택한 답: ${option.label}`;
     }
     if (body.location !== undefined) session.location = validateLocation(body.location);
+    // Revoke the previous approval before retrieval or generation can fail.
+    // New conversations have no old token and are saved only after a valid result.
+    session = { ...session, revision: session.revision + 1, updatedAt: new Date().toISOString(), confirmationToken: null, question: null, phase: "needs_update", ...(session.analysis ? { analysis: { ...session.analysis, ready: false } } : {}) };
+    if (body.sessionId) await saveSession(config, session);
     let sources;
     try { sources = await retrieveKnowledge(`${REPORT_TOPICS[session.topic].label} ${message} ${session.analysis?.observations?.join(" ") ?? ""} 사진 위험 위치`, config.knowledgePath); }
     catch { failure("RAG_UNAVAILABLE", "검증 자료 검색을 준비하지 못해 AI 판단을 진행하지 않았습니다.", 503); }
@@ -151,7 +155,7 @@ export async function assistantTurn(body, config) {
     active++; calls.push(now);
     let analysis;
     try { analysis = await infer(session, message, sources, config); } finally { active--; }
-    session = { ...session, analysis, sources: sources.filter((source) => analysis.sourceIds.includes(source.id)).map(({ text, score, ...reference }) => reference), model: config.uwatModel || DEFAULT_GEMINI_MODEL, revision: session.revision + 1, updatedAt: new Date().toISOString(), confirmationToken: null, question: null, phase: "conversation", messages: [...session.messages, { role: "user", text: message }, { role: "assistant", text: analysis.reply }] };
+    session = { ...session, analysis, sources: sources.filter((source) => analysis.sourceIds.includes(source.id)).map(({ text, score, ...reference }) => reference), model: config.uwatModel || DEFAULT_GEMINI_MODEL, updatedAt: new Date().toISOString(), phase: "conversation", messages: [...session.messages, { role: "user", text: message }, { role: "assistant", text: analysis.reply }] };
     if (analysis.intent === "road_report") {
       if (analysis.ready && session.location) {
         session.phase = "awaiting_confirmation"; session.confirmationToken = randomUUID();
