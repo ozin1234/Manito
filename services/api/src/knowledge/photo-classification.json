@@ -1,0 +1,106 @@
+[
+  {
+    "id": "photo-taxonomy-overview",
+    "title": "사진 제보 세부 유형 전체 목록과 선택 순서",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "사진에서 실제 보이는 대상과 상태를 먼저 기록한다. 생활불편: trash_scattered 흩어진 쓰레기, trash_pile 봉투·폐기물 더미, streetlight_fault 가로등 파손, facility_damage 생활 시설 파손. 도로: pothole 포트홀, road_damage 노면·보도 파손, road_obstruction 통행 장애물, vehicle_incident 차량 사고·파손 정황. 안전재난: flooding 도로 침수, ice_risk 결빙 의심, rockfall 실제 낙석·토사, safety_facility 교통 안전 시설 이상. 화면의 탐색 메뉴는 정답이 아니다. 복수 문제가 보이면 가장 직접적이고 특정 가능한 주된 문제를 선택하고 다른 관찰 대상은 설명에 적는다. 어느 유형에도 속하지 않으면 분야별 other를 제안하되 자동 확정하지 않는다. 행정기관 분류나 법적 판정이 아니다."
+  },
+  {
+    "id": "photo-none",
+    "title": "제보할 문제가 보이지 않는 사진",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "정상 쓰레기통, 멀쩡한 시설, 정상적인 빈 도로, 단지 젖은 노면만 보이고 실제 파손·침수·장애물이 없으면 intent=no_issue, issueType=none, ready=false로 둔다. 사진 밖에 문제가 있을 수 있다는 일반 가능성만으로 제보를 만들지 않는다. road_report와 issueType=none을 함께 쓰지 않는다."
+  },
+  {
+    "id": "photo-trash-scattered",
+    "title": "흩어진 쓰레기와 폐기물 더미 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "수거함 밖 바닥에 종이·플라스틱 등 낱개 쓰레기가 흩어져 있으면 living/trash_scattered. 봉투·대형 폐기물이 한곳에 쌓였으면 trash_pile이며 정해진 수거 대기인지 사진만으로 모르므로 필요 시 확인 질문을 한다. 낱개 쓰레기나 봉투가 보인다는 이유만으로 투기자나 법 위반을 확정하지 않는다."
+  },
+  {
+    "id": "photo-streetlight",
+    "title": "가로등 파손과 일반 시설 파손 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "가로등 지주·등기구가 쓰러지거나 깨진 모습은 living/streetlight_fault로 특정한다. 가로등을 facility_damage로 뭉뚱그리지 않는다. 낮 사진에서 불이 꺼져 보이는 것만으로 점등 고장을 확정할 수 없다. 벤치·휴게시설 파손은 facility_damage이며 가로등이 아니다."
+  },
+  {
+    "id": "photo-facility",
+    "title": "생활 시설과 교통 안전 시설 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "벤치·휴게시설처럼 생활 편의용 시설의 파손은 living/facility_damage. 가드레일·방호 울타리·교통표지·신호등처럼 도로 이용자를 보호하거나 통제하는 시설의 손상은 safety/safety_facility. 시설의 이름과 실제 보이는 손상을 함께 확인한다. 단순히 오래 보이는 시설을 파손으로 간주하지 않는다."
+  },
+  {
+    "id": "photo-pothole",
+    "title": "포트홀과 일반 노면 파손 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "도로 포장에 국소적으로 움푹 파인 구멍의 경계가 보이면 road/pothole. 길게 갈라진 균열, 들뜬 보도, 파손된 포장면은 road_damage. 그림자·물웅덩이를 깊은 구멍으로 추측하지 않고 깊이나 실제 차량 피해를 쓰지 않는다."
+  },
+  {
+    "id": "photo-road-damage",
+    "title": "보도·도로 파손의 심각도와 준비 여부",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "균열·단차·보도블록 파손 자체가 사진에 보이면 road/road_damage. 가느다란 균열만 보이고 단차·구멍·보행 장애가 분명하지 않으면 유형은 road_damage이지만 ready=false로 현장 상태를 확인한다. 길을 막는 나무·물체는 road_obstruction이며 포장 파손과 다르다."
+  },
+  {
+    "id": "photo-obstruction",
+    "title": "통행 장애물과 차량 사고 정황 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "쓰러진 나무·적치물처럼 물체가 실제로 도로를 점유하면 road/road_obstruction. 파손된 차량이 보이면 vehicle_incident를 우선 고려하되 사진만으로 사고 시점·원인·부상자·현재 통행 장애를 확정하지 않는다. 장애물과 차량이 동시에 있으면 주된 관찰 문제를 선택하고 나머지는 설명한다."
+  },
+  {
+    "id": "photo-flooding",
+    "title": "도로 침수와 단순 젖은 노면 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "물의 표면·경계가 도로 차로를 실제로 덮거나 차량·보행 통행에 영향을 줄 정도의 고인 물이 보이면 safety/flooding. 비가 내리거나 노면이 어둡게 젖은 모습만으로 침수라고 하지 않는다. 수심·배수 원인·통제 여부를 사진 한 장으로 단정하지 않는다. 고인 물의 범위가 애매하면 flooding을 제안하되 ready=false로 확인한다."
+  },
+  {
+    "id": "photo-ice",
+    "title": "눈길과 결빙 의심 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "도로 표면에 눈·서리·얼음처럼 보이는 부분이 있으면 safety/ice_risk를 제안할 수 있다. 눈 사진만으로 실제 결빙, 도로 온도, 블랙아이스를 확정하지 않는다. 얼음 여부가 보이지 않으면 ready=false로 확인한다. 단순히 추운 계절이라는 이유만으로 결빙 제보를 만들지 않는다."
+  },
+  {
+    "id": "photo-rockfall",
+    "title": "실제 낙석과 도로 가장자리 유실 구별",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "도로 위나 갓길에 실제로 떨어진 바위·돌·토사가 보이거나 무너지는 사면이 사진에 보일 때만 safety/rockfall. 도로 옆 자연 암벽만 보이는 사진은 낙석이 아니다. 도로 가장자리가 씻겨 나갔거나 가드레일 아래 사면이 유실된 것만으로 rockfall이라고 쓰지 않는다. 그 장면에서 가드레일의 손상이 명확하면 safety_facility도 비교한다."
+  },
+  {
+    "id": "photo-safety-facility",
+    "title": "가드레일·방호시설·신호등 손상",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "가드레일·방호 울타리가 끊어지거나 휘고, 교통 신호등·표지가 파손된 사진은 safety/safety_facility. 보행 신호기의 정지 빨강과 진행 초록이 같은 사진에서 동시에 밝게 켜져 있으면 이상 표시 가능성이 있으므로 정상 시설로 처리하지 않는다. 영상 잔상·반사인지 불분명하면 safety_facility로 제안하되 ready=false로 확인한다. 도로 가장자리 유실이 함께 보이더라도 돌·토사가 떨어진 장면이 없다면 rockfall로 바꾸지 않는다. 파손 시설 자체가 뚜렷하면 일반 road_damage보다 안전 시설 유형을 우선한다."
+  },
+  {
+    "id": "photo-uncertain-other",
+    "title": "범위 밖·복합 장면·기타 유형의 보류",
+    "authority": "product",
+    "url": null,
+    "checkedAt": "2026-11-24",
+    "text": "사진에 여러 문제가 함께 보이고 주된 문제가 불명확하면 명백한 대상·상태를 먼저 관찰하고 짧은 확인 질문을 한다. 12개 구체 유형 중 어느 것도 맞지 않으면 분야별 other_living/other_road/other_safety로 제안하되 ready=false로 사용자 확인을 요청한다. 보이지 않는 위험이나 법적 사실을 만들어 유형을 채우지 않는다."
+  }
+]

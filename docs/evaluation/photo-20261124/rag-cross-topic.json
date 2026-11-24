@@ -1,0 +1,8 @@
+[
+  {"id":"streetlight-from-road","file":"images/lamp_d.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"streetlight_fault","expectedReady":true},
+  {"id":"guardrail-from-road","file":"images/guardrail_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true},
+  {"id":"tree-from-living","file":"images/tree_c.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_obstruction","expectedReady":true},
+  {"id":"trash-from-safety","file":"images/trash_scattered_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"trash_scattered","expectedReady":true},
+  {"id":"flood-from-road","file":"images/flood_a.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":true},
+  {"id":"normal-road-from-living","file":"images/normal_road_b.jpg","selectedTopic":"living","expectedIntent":"no_issue","expectedTopic":null,"expectedIssueType":"none","expectedReady":false}
+]

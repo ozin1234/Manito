@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { handle } from "./api.mjs";
+import { DEFAULT_UWAT_MODEL } from "./assistant.mjs";
 
 const config = {
   key: process.env.GROAD_API_KEY,
@@ -11,7 +12,7 @@ const config = {
   reportsDir: process.env.GROAD_REPORTS_DIR ?? "/app/data/reports",
   geminiApiKey: process.env.GEMINI_API_KEY,
   summaryModel: process.env.GROAD_SUMMARY_MODEL,
-  uwatModel: process.env.UWAT_MODEL || "gemini-3.8-flash",
+  uwatModel: process.env.UWAT_MODEL || DEFAULT_UWAT_MODEL,
   knowledgePath: process.env.UWAT_KNOWLEDGE_PATH || undefined,
   adminUsername: process.env.KROAD_ADMIN_USERNAME,
   adminPasswordHash: process.env.KROAD_ADMIN_PASSWORD_HASH,

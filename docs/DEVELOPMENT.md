@@ -46,7 +46,7 @@ git push -u origin feat/feature-name
 | `OSRM_URL`, `NOMINATIM_URL`, `TILES_URL` | Node 단독 실행의 지도 서비스 주소 |
 | `ITS_API_KEY`, `ITS_LINK_SHAPES_PATH` | 선택적 ITS 인증키와 도로선 JSON/GZIP 경로 |
 | `GEMINI_API_KEY` | 우왓 사진·대화 판독과 선택적 기존 텍스트 요약의 서버 전용 키 |
-| `UWAT_MODEL` | 우왓 모델 ID, 기본 `gemini-3.8-flash` |
+| `UWAT_MODEL` | 우왓 모델 ID, 기본 `gemini-3.5-flash-lite` |
 | `UWAT_KNOWLEDGE_PATH` | 선택적 검수 근거 JSON 경로, 미설정 시 내장 도로 안전 자료 |
 | `GROAD_SUMMARY_MODEL` | 기존 텍스트 요약의 선택적 모델 ID, 우왓 모델 기본값 재사용 |
 

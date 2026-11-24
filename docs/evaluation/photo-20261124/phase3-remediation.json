@@ -1,0 +1,5 @@
+[
+  {"id":"safety-facility-new","file":"images/barrier_c.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true},
+  {"id":"road-damage-new","file":"images/sidewalk_c.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_damage","expectedReady":true},
+  {"id":"flooding-new","file":"images/flood_d.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":false}
+]

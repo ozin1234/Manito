@@ -87,7 +87,7 @@ export async function createReport(body, config, approvedAssistant = null) {
   const id = approvedAssistant?.reportId ?? randomUUID();
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError("INVALID_REPORT_ID", "저장 번호를 확인할 수 없습니다.", 400);
   const report = {
-    id, topic, category: body.category, ...summary, description,
+    id, topic, category: body.category, ...(approvedAssistant?.issueType ? { issueType: approvedAssistant.issueType } : {}), ...summary, description,
     lat: body.lat, lng: body.lng, locationSource, locationAccuracyM, locationCapturedAt,
     photoUrl: photo ? `/api/v1/reports/${id}/photo` : null,
     createdAt: new Date().toISOString(), status: "draft", agencyStatus: "not_submitted",

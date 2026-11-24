@@ -1,0 +1,5 @@
+[
+  {"id":"streetlight-recheck","file":"images/lamp_b.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"streetlight_fault","expectedReady":true},
+  {"id":"wet-road-recheck","file":"images/wet_road.jpg","selectedTopic":"road","expectedIntent":"no_issue","expectedTopic":null,"expectedIssueType":"none","expectedReady":false},
+  {"id":"safety-facility-calibration","file":"images/signal_a.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":false}
+]

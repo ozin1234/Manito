@@ -1,0 +1,15 @@
+[
+  {"id":"trash-scattered-1","file":"images/trash_scattered.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"trash_scattered","expectedReady":true},
+  {"id":"trash-pile-1","file":"images/trash_sidewalk.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"trash_pile","expectedReady":false},
+  {"id":"streetlight-1","file":"images/lamp_b.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"streetlight_fault","expectedReady":true},
+  {"id":"facility-1","file":"images/bench_a.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"facility_damage","expectedReady":true},
+  {"id":"pothole-1","file":"images/pothole.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"pothole","expectedReady":true},
+  {"id":"road-damage-1","file":"images/sidewalk_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_damage","expectedReady":true},
+  {"id":"road-obstruction-1","file":"images/tree_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_obstruction","expectedReady":true},
+  {"id":"vehicle-incident-1","file":"images/collision_cc0.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"vehicle_incident","expectedReady":false},
+  {"id":"flooding-1","file":"images/flood_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":true},
+  {"id":"ice-risk-1","file":"images/ice_a.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"ice_risk","expectedReady":false},
+  {"id":"rockfall-1","file":"images/rock_a.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"rockfall","expectedReady":true},
+  {"id":"normal-bin","file":"images/trash_bins.jpg","selectedTopic":"living","expectedIntent":"no_issue","expectedTopic":"living","expectedIssueType":"none","expectedReady":false},
+  {"id":"wet-road-only","file":"images/wet_road.jpg","selectedTopic":"road","expectedIntent":"no_issue","expectedTopic":null,"expectedIssueType":"none","expectedReady":false}
+]

@@ -1,0 +1,4 @@
+[
+  {"id":"pedestrian-signal-new","file":"images/signal_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true},
+  {"id":"area-flood-new","file":"images/flood_c.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":true}
+]

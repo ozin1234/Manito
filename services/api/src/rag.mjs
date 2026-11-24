@@ -2,6 +2,8 @@ import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const defaultPath = fileURLToPath(new URL("./knowledge/road-safety.json", import.meta.url));
+const photoPath = fileURLToPath(new URL("./knowledge/photo-classification.json", import.meta.url));
+const regulationPath = fileURLToPath(new URL("./knowledge/regulations.json", import.meta.url));
 const indexes = new Map();
 export function tokenize(text) {
   const words = String(text).toLowerCase().match(/[a-z0-9]+|[가-힣]+/g) ?? [];
@@ -24,10 +26,9 @@ async function load(path) {
   indexes.set(path, index);
   return index;
 }
-export async function retrieveKnowledge(query, knowledgePath = defaultPath) {
-  const index = await load(knowledgePath);
+function rank(index, query) {
   const terms = [...new Set(tokenize(query))];
-  const ranked = index.rows.map((row) => {
+  return index.rows.map((row) => {
     let score = 0;
     for (const term of terms) {
       const frequency = row.frequencies.get(term) ?? 0;
@@ -36,7 +37,39 @@ export async function retrieveKnowledge(query, knowledgePath = defaultPath) {
     }
     return { ...row.document, score: Number(score.toFixed(5)) };
   }).sort((a, b) => b.score - a.score);
+}
+export async function retrieveKnowledge(query, knowledgePath = defaultPath) {
+  const ranked = rank(await load(knowledgePath), query);
   const required = new Set(["manito-topics", "manito-photo-uncertainty", "manito-consent", "official-report-status"]);
   const chosen = [...ranked.filter((row) => required.has(row.id)), ...ranked.filter((row) => !required.has(row.id)).slice(0, 4)];
   return chosen;
+}
+
+const byTopic = {
+  living: new Set(["photo-trash-scattered", "photo-streetlight", "photo-facility"]),
+  road: new Set(["photo-pothole", "photo-road-damage", "photo-obstruction"]),
+  safety: new Set(["photo-flooding", "photo-ice", "photo-rockfall", "photo-safety-facility"]),
+};
+export async function retrievePhotoTaxonomy(query, selectedTopic, knowledgePath = photoPath) {
+  const ranked = rank(await load(knowledgePath), query);
+  const mandatory = new Set(["photo-taxonomy-overview", "photo-none", "photo-uncertain-other"]);
+  const selected = byTopic[selectedTopic] ?? new Set();
+  const chosen = [...ranked.filter((row) => mandatory.has(row.id)), ...ranked.filter((row) => selected.has(row.id))];
+  const existing = new Set(chosen.map((row) => row.id));
+  // The small taxonomy is kept at full recall so a wrong browsing tab cannot hide a class.
+  chosen.push(...ranked.filter((row) => !existing.has(row.id)));
+  return chosen;
+}
+
+export async function retrieveRegulatoryGuidance(issueType, knowledgePath = regulationPath) {
+  if (!issueType || issueType === "none") return [];
+  const { rows } = await load(knowledgePath);
+  return rows.filter(({ document }) => Array.isArray(document.issueTypes) && document.issueTypes.includes(issueType))
+    .map(({ document }) => ({ id: document.id, title: document.title, authority: document.authority, url: document.url, checkedAt: document.apiCheckedAt ?? document.checkedAt, appliesWhen: document.appliesWhen, text: document.text }));
+}
+
+export async function retrieveRegulatoryContext(knowledgePath = regulationPath) {
+  const { rows } = await load(knowledgePath);
+  // Keep legal IDs out of the model prompt: sourceIds is reserved for photo/service evidence.
+  return rows.map(({ document }) => ({ title: document.title, issueTypes: document.issueTypes, appliesWhen: document.appliesWhen, text: document.text, ...(document.officialText ? { officialText: document.officialText.slice(0, 1600), apiCheckedAt: document.apiCheckedAt } : {}) }));
 }

@@ -42,7 +42,7 @@ node scripts/dev.mjs --shared-maps
 
 ## Gemini 설정
 
-[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.8-flash`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진만으로 먼저 판단하며 설명 입력·마이크·음성 읽기는 제공하지 않습니다. 분석 결과와 확인 질문이 준비되면 짧은 알림음을 재생합니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
+[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.5-flash-lite`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진만으로 먼저 판단하며 설명 입력·마이크·음성 읽기는 제공하지 않습니다. 분석 결과와 확인 질문이 준비되면 짧은 알림음을 재생합니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
 
 ## 검증
 

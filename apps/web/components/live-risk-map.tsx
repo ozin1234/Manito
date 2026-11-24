@@ -7,11 +7,13 @@ import type { TrafficSnapshot } from "@/lib/groad-api";
 import { locationErrorMessage, locationPreflight } from "@/lib/location-diagnostics";
 import { GpsAccessHint } from "./gps-access-hint";
 import type { ReportTopic } from "@/lib/report-topics";
+import type { ReportIssueType } from "@/lib/report-issue-types";
+import { reportIssueLabel } from "@/lib/report-issue-types";
 import type { PublicCaseUpdate } from "@/lib/case-types";
 
 export type ReportCategory = "danger" | "near_miss" | "caution";
 export type SafetyReport = {
-  id: string; topic?: ReportTopic; category: ReportCategory; title: string; summary: string; description: string;
+  id: string; topic?: ReportTopic; issueType?: ReportIssueType; category: ReportCategory; title: string; summary: string; description: string;
   lat: number; lng: number; photoUrl?: string; createdAt: string; status: string;
   agencyStatus?: string; summarySource?: string;
   managementProgress?: PublicCaseUpdate;
@@ -240,7 +242,7 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
   return <div className={`gr-safety-map${weather && !weather.isDay ? " is-night" : ""}`}>
     <div ref={elementRef} className="gr-safety-map-canvas" role="application" aria-label="K-ROAD 현장 지도" />
     {condition && <div className="gr-map-weather" title="Open-Meteo 기상 모델 자료 · 현장 실측값이 아닙니다."><WeatherIcon size={16} /> {Math.round(weather!.temperatureC)}° · {condition} <small>기상 모델</small></div>}
-    {showCategoryFilter && <div className="gr-map-category-filter" role="group" aria-label="제보 유형 필터">{categories.map(({ id, label }) =>
+    {showCategoryFilter && <div className="gr-map-category-filter" role="group" aria-label="위험도 필터">{categories.map(({ id, label }) =>
       <button key={id} type="button" className={visible[id] ? `active ${id}` : ""} onClick={() => setVisible(state => ({ ...state, [id]: !state[id] }))}><span>!</span>{label}</button>)}</div>}
     <div className="gr-map-controls">
       <button type="button" onClick={startGps} aria-label={gpsPending ? "위치 요청 취소" : gpsActive ? "위치 추적 끄기" : "내 위치 추적"} title={gpsPending ? "GPS 연결 중" : "내 위치 추적"}><LocateFixed size={21} /></button>
@@ -263,7 +265,7 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
     <button type="button" className="gr-map-new-report" onClick={newReport}><Plus size={20} /> 이 위치로 남기기</button>
     {selected && !onSelectReport && <section className="gr-map-report-detail" aria-label="제보 상세">
       <div className="gr-map-detail-top"><span className={`gr-map-detail-badge ${selected.category}`}>{labels[selected.category]}</span><button type="button" onClick={() => setSelected(null)} aria-label="제보 닫기"><X size={18} /></button></div>
-      <h2>{selected.title}</h2><p>{selected.summary}</p>
+      <h2>{selected.title}</h2>{selected.issueType && <small>{reportIssueLabel(selected.issueType)}</small>}<p>{selected.summary}</p>
       {selected.photoUrl && <img src={selected.photoUrl} alt={`${selected.title} 현장 제보 사진`} />}
       <div className="gr-map-detail-description">{selected.description}</div>
       <small>시민 제보 · {new Date(selected.createdAt).toLocaleString("ko-KR")} · 기관 제출 전</small>

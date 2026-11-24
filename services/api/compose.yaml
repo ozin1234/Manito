@@ -12,7 +12,7 @@ services:
       GROAD_REPORTS_DIR: /app/data/reports
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GROAD_SUMMARY_MODEL: ${GROAD_SUMMARY_MODEL:-gemini-3.8-flash}
-      UWAT_MODEL: ${UWAT_MODEL:-gemini-3.8-flash}
+      UWAT_MODEL: ${UWAT_MODEL:-gemini-3.5-flash-lite}
     ports:
       - "127.0.0.1:${MANITO_API_PORT:-8790}:8788"
     volumes:

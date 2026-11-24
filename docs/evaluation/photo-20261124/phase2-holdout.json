@@ -1,0 +1,15 @@
+[
+  {"id":"trash-scattered-2","file":"images/trash_scattered_b.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"trash_scattered","expectedReady":true},
+  {"id":"trash-pile-2","file":"images/trash_pile_b.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"trash_pile","expectedReady":false},
+  {"id":"streetlight-2","file":"images/lamp_d.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"streetlight_fault","expectedReady":true},
+  {"id":"facility-2","file":"images/bench_b.jpg","selectedTopic":"living","expectedIntent":"road_report","expectedTopic":"living","expectedIssueType":"facility_damage","expectedReady":true},
+  {"id":"pothole-2","file":"images/pothole_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"pothole","expectedReady":true},
+  {"id":"road-damage-2","file":"images/sidewalk_a.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_damage","expectedReady":false},
+  {"id":"road-obstruction-2","file":"images/tree_c.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"road_obstruction","expectedReady":true},
+  {"id":"vehicle-incident-2","file":"images/crashed_car.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"road","expectedIssueType":"vehicle_incident","expectedReady":false},
+  {"id":"flooding-2","file":"images/flood_a.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":true},
+  {"id":"ice-risk-2","file":"images/ice_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"ice_risk","expectedReady":false},
+  {"id":"rockfall-2","file":"images/rock_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"rockfall","expectedReady":true},
+  {"id":"safety-facility-2","file":"images/guardrail_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true},
+  {"id":"normal-road-2","file":"images/normal_road_b.jpg","selectedTopic":"road","expectedIntent":"no_issue","expectedTopic":null,"expectedIssueType":"none","expectedReady":false}
+]

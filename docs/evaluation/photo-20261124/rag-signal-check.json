@@ -1,0 +1,4 @@
+[
+  {"id":"signal-b-recheck","file":"images/signal_b.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true},
+  {"id":"signal-c-new","file":"images/signal_c.jpg","selectedTopic":"road","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":false}
+]

@@ -1,0 +1,3 @@
+{"id":"trash-scattered-2","expected":{"intent":"road_report","topic":"living","issueType":"trash_scattered","ready":true},"httpStatus":503,"durationMs":38141,"observed":null,"typeCorrect":null,"readinessCorrect":null,"correct":null,"errorCode":"AI_UNAVAILABLE"}
+{"id":"trash-pile-2","expected":{"intent":"road_report","topic":"living","issueType":"trash_pile","ready":false},"httpStatus":503,"durationMs":78732,"observed":null,"typeCorrect":null,"readinessCorrect":null,"correct":null,"errorCode":"AI_UNAVAILABLE"}
+{"id":"streetlight-2","expected":{"intent":"road_report","topic":"living","issueType":"streetlight_fault","ready":true},"httpStatus":503,"durationMs":84522,"observed":null,"typeCorrect":null,"readinessCorrect":null,"correct":null,"errorCode":"AI_UNAVAILABLE"}

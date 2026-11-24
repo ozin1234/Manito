@@ -10,7 +10,7 @@ const photo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAw
 const replacement = "data:image/jpeg;base64,/9j/2Q==";
 const location = { lat: 37.874, lng: 127.734, locationSource: "map" };
 const nextLocation = { lat: 37.875, lng: 127.735, locationSource: "map" };
-const ready = { intent: "road_report", suggestedTopic: "road", reply: "사진에서 확인한 내용을 정리했어요.", uncertainty: "clear", observations: ["도로 표면에 파인 부분이 보입니다."], category: "danger", title: "도로 표면 파손", summary: "사진에서 도로 표면 파손이 관찰됩니다.", description: "사진에 보이는 도로 표면의 파손 상태에 대한 현장 확인이 필요합니다.", reason: "사진에서 관찰한 표면 상태를 반영했습니다.", question: "", options: [], sourceIds: ["manito-photo-uncertainty"], ready: true };
+const ready = { intent: "road_report", suggestedTopic: "road", issueType: "pothole", reply: "사진에서 확인한 내용을 정리했어요.", uncertainty: "clear", observations: ["도로 표면에 파인 부분이 보입니다."], category: "danger", title: "도로 표면 파손", summary: "사진에서 도로 표면 파손이 관찰됩니다.", description: "사진에 보이는 도로 표면의 파손 상태에 대한 현장 확인이 필요합니다.", reason: "사진에서 관찰한 표면 상태를 반영했습니다.", question: "", options: [], sourceIds: ["manito-photo-uncertainty"], ready: true };
 const provider = () => Response.json({ candidates: [{ finishReason: "STOP", content: { parts: [{ text: JSON.stringify(ready) }] } }] });
 const send = (config, action, body) => handle(new Request(`http://kroad.test/v1/assistant/${action}`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }), config);
 

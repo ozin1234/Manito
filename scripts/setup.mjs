@@ -17,7 +17,7 @@ for (const [key, value] of Object.entries({ MANITO_WEB_PORT: "5174", MANITO_API_
 }
 if (!configured.GROAD_API_KEY) additions.GROAD_API_KEY = randomBytes(32).toString("hex");
 if (!Object.hasOwn(configured, "GEMINI_API_KEY")) additions.GEMINI_API_KEY = "";
-if (!configured.UWAT_MODEL) additions.UWAT_MODEL = "gemini-3.8-flash";
+if (!configured.UWAT_MODEL) additions.UWAT_MODEL = "gemini-3.5-flash-lite";
 if (process.argv.includes("--admin")) {
   if (!configured.KROAD_ADMIN_SESSION_SECRET) additions.KROAD_ADMIN_SESSION_SECRET = randomBytes(32).toString("hex");
   if (!configured.KROAD_ADMIN_USERNAME) additions.KROAD_ADMIN_USERNAME = "agency-admin";
