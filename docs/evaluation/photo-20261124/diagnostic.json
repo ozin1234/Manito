@@ -1,0 +1,5 @@
+[
+  {"id":"flood-a-diagnostic","file":"images/flood_a.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"flooding","expectedReady":true},
+  {"id":"normal-road-diagnostic","file":"images/normal_road_b.jpg","selectedTopic":"road","expectedIntent":"no_issue","expectedTopic":null,"expectedIssueType":"none","expectedReady":false},
+  {"id":"guardrail-diagnostic","file":"images/guardrail_b.jpg","selectedTopic":"safety","expectedIntent":"road_report","expectedTopic":"safety","expectedIssueType":"safety_facility","expectedReady":true}
+]

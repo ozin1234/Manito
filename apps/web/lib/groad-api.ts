@@ -21,7 +21,7 @@ export class GroadApiError extends Error {
 function engineConfig() {
   const base = process.env.GROAD_INDEPENDENT_API_URL;
   const key = process.env.GROAD_INDEPENDENT_API_KEY;
-  if (!base || !key) throw new GroadApiError("ENGINE_NOT_CONFIGURED", "G-ROAD 독립 지도 엔진 서버가 아직 연결되지 않았습니다.", 503);
+  if (!base || !key) throw new GroadApiError("ENGINE_NOT_CONFIGURED", "K-ROAD 독립 지도 엔진 서버가 아직 연결되지 않았습니다.", 503);
   return { base, key };
 }
 
@@ -50,28 +50,28 @@ async function engineRequest(path: string, init: RequestInit = {}, timeoutMs = 1
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     });
-    if (response.status === 401) throw new GroadApiError("ENGINE_AUTH", "G-ROAD 독립 지도 엔진 인증을 확인해야 합니다.", 503);
+    if (response.status === 401) throw new GroadApiError("ENGINE_AUTH", "K-ROAD 독립 지도 엔진 인증을 확인해야 합니다.", 503);
     if (!response.ok) {
       const payload = await response.json().catch(() => null) as { error?: { message?: string } } | null;
-      throw new GroadApiError(payload?.error?.message ? "ENGINE_ERROR" : "ENGINE_UNAVAILABLE", payload?.error?.message ?? "G-ROAD 독립 지도 엔진 요청에 실패했습니다.", response.status >= 500 ? 503 : response.status);
+      throw new GroadApiError(payload?.error?.message ? "ENGINE_ERROR" : "ENGINE_UNAVAILABLE", payload?.error?.message ?? "K-ROAD 독립 지도 엔진 요청에 실패했습니다.", response.status >= 500 ? 503 : response.status);
     }
     return response;
   } catch (error) {
     if (error instanceof GroadApiError) throw error;
-    throw new GroadApiError("ENGINE_UNAVAILABLE", "G-ROAD 독립 지도 엔진에 연결할 수 없습니다.", 503);
+    throw new GroadApiError("ENGINE_UNAVAILABLE", "K-ROAD 독립 지도 엔진에 연결할 수 없습니다.", 503);
   }
 }
 
 async function engineJson(path: string, init?: RequestInit, timeoutMs?: number): Promise<unknown> {
   const response = await engineRequest(path, init, timeoutMs);
   try { return await response.json(); }
-  catch { throw new GroadApiError("ENGINE_RESPONSE", "G-ROAD 독립 지도 엔진 응답을 읽을 수 없습니다.", 502); }
+  catch { throw new GroadApiError("ENGINE_RESPONSE", "K-ROAD 독립 지도 엔진 응답을 읽을 수 없습니다.", 502); }
 }
 
 export async function searchPlaces(query: string, limit = 8): Promise<Place[]> {
   const url = new URLSearchParams({ q: query, limit: String(limit) });
   const result = await engineJson(`/v1/places?${url}`) as { places?: Place[] };
-  if (!Array.isArray(result.places)) throw new GroadApiError("ENGINE_RESPONSE", "G-ROAD 장소 검색 결과 형식이 올바르지 않습니다.", 502);
+  if (!Array.isArray(result.places)) throw new GroadApiError("ENGINE_RESPONSE", "K-ROAD 장소 검색 결과 형식이 올바르지 않습니다.", 502);
   return result.places;
 }
 
@@ -82,7 +82,7 @@ export async function planDrivingRoute(origin: Coordinate, destination: Coordina
     body: JSON.stringify({ origin, destination, option }),
   }) as { route?: DrivingRoute };
   if (!result.route || result.route.provider !== "groad-osrm" || !Array.isArray(result.route.geometry?.coordinates))
-    throw new GroadApiError("ENGINE_RESPONSE", "G-ROAD 경로 결과 형식이 올바르지 않습니다.", 502);
+    throw new GroadApiError("ENGINE_RESPONSE", "K-ROAD 경로 결과 형식이 올바르지 않습니다.", 502);
   return result.route;
 }
 

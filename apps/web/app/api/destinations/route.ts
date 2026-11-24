@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GroadApiError, searchPlaces } from "@/lib/groad-api";
 
-// Compatibility endpoint for older G-ROAD clients. New clients use /api/v1/places.
+// Compatibility endpoint for older K-ROAD clients. New clients use /api/v1/places.
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (query.length < 2 || query.length > 80)

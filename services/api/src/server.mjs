@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { handle } from "./api.mjs";
+import { DEFAULT_UWAT_MODEL } from "./assistant.mjs";
 
 const config = {
   key: process.env.GROAD_API_KEY,
@@ -9,8 +10,13 @@ const config = {
   itsApiKey: process.env.ITS_API_KEY,
   itsShapesPath: process.env.ITS_LINK_SHAPES_PATH,
   reportsDir: process.env.GROAD_REPORTS_DIR ?? "/app/data/reports",
-  openaiApiKey: process.env.OPENAI_API_KEY,
+  geminiApiKey: process.env.GEMINI_API_KEY,
   summaryModel: process.env.GROAD_SUMMARY_MODEL,
+  uwatModel: process.env.UWAT_MODEL || DEFAULT_UWAT_MODEL,
+  knowledgePath: process.env.UWAT_KNOWLEDGE_PATH || undefined,
+  adminUsername: process.env.KROAD_ADMIN_USERNAME,
+  adminPasswordHash: process.env.KROAD_ADMIN_PASSWORD_HASH,
+  adminSessionSecret: process.env.KROAD_ADMIN_SESSION_SECRET,
 };
 if (!config.key || config.key.length < 32) throw new Error("GROAD_API_KEY must contain at least 32 characters");
 const port = Number(process.env.PORT ?? "8788");
@@ -22,7 +28,7 @@ createServer(async (incoming, outgoing) => {
     let size = 0;
     for await (const chunk of incoming) {
       size += chunk.length;
-      const maxBodyBytes = incoming.method === "POST" && incoming.url?.split("?")[0] === "/v1/reports" ? 4_300_000 : 8192;
+      const maxBodyBytes = incoming.method === "POST" && ["/v1/reports", "/v1/assistant/chat"].includes(incoming.url?.split("?")[0]) ? 4_300_000 : 8192;
       if (size > maxBodyBytes) {
         outgoing.writeHead(413).end();
         return;
@@ -43,4 +49,4 @@ createServer(async (incoming, outgoing) => {
     if (!outgoing.headersSent) outgoing.writeHead(400);
     outgoing.end();
   }
-}).listen(port, host, () => console.log(`G-ROAD Independent API listening on ${host}:${port}`));
+}).listen(port, host, () => console.log(`K-ROAD Independent API listening on ${host}:${port}`));

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GroadApiError, isCoordinate, planDrivingRoute } from "@/lib/groad-api";
 
-// Compatibility endpoint for older G-ROAD clients. New clients use /api/v1/routes/driving.
+// Compatibility endpoint for older K-ROAD clients. New clients use /api/v1/routes/driving.
 export async function POST(request: NextRequest) {
   let body: { start?: unknown; end?: unknown };
   try { body = await request.json(); }

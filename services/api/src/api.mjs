@@ -5,6 +5,9 @@ import { validPoint } from "./geo.mjs";
 import { ApiError, matchTrace, planRoute, searchPlaces } from "./providers.mjs";
 import { getTraffic } from "./traffic.mjs";
 import { createReport, getReportPhoto, listReports } from "./reports.mjs";
+import { assistantStatus, assistantTurn, commitAssistant } from "./assistant.mjs";
+import { adminConfigured, loginAdmin, logoutAdmin, requireAdmin } from "./admin-auth.mjs";
+import { listCases, getCase, updateCase, publicProgress } from "./management.mjs";
 
 const riskFeed = JSON.parse(readFileSync(fileURLToPath(new URL("./risk-feed.json", import.meta.url)), "utf8"));
 const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" };
@@ -63,12 +66,30 @@ export async function handle(request, config) {
     if (request.method === "GET" && url.pathname === "/health")
       return json({ status: "ok", version: "1", engine: "groad-osrm" });
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/v1"))
-      return json({ name: "G-ROAD Independent API", version: "1", authentication: "Bearer key", roadSource: "OpenStreetMap", satelliteSource: "ESA WorldCover 2021 / Copernicus Sentinel-2", endpoints: ["GET /v1/places", "POST /v1/routes/driving", "POST /v1/navigation/replan", "POST /v1/navigation/match", "GET /v1/risk/segments", "GET /v1/traffic/segments", "GET /v1/reports", "POST /v1/reports", "GET /v1/reports/{id}/photo", "GET /v1/tiles/{z}/{x}/{y}.png", "GET /v1/tiles/satellite/{z}/{x}/{y}.png"] });
-    if (!authorized(request, config.key)) return problem("UNAUTHORIZED", "유효한 G-ROAD API 키가 필요합니다.", 401);
+      return json({ name: "K-ROAD Independent API", version: "1", authentication: "Bearer key", roadSource: "OpenStreetMap", satelliteSource: "ESA WorldCover 2021 / Copernicus Sentinel-2", endpoints: ["GET /v1/places", "POST /v1/routes/driving", "POST /v1/navigation/replan", "POST /v1/navigation/match", "GET /v1/risk/segments", "GET /v1/traffic/segments", "GET /v1/reports", "POST /v1/reports", "GET /v1/reports/{id}/photo", "GET /v1/tiles/{z}/{x}/{y}.png", "GET /v1/tiles/satellite/{z}/{x}/{y}.png"] });
+    if (!authorized(request, config.key)) return problem("UNAUTHORIZED", "유효한 K-ROAD API 키가 필요합니다.", 401);
+
+    if (url.pathname === "/v1/admin/status" && request.method === "GET") return json({ configured: adminConfigured(config), officialSubmissionConnected: false });
+    if (url.pathname === "/v1/admin/login" && request.method === "POST") return json(await loginAdmin(await bodyJson(request), config));
+    if (url.pathname.startsWith("/v1/admin/")) {
+      const actor = await requireAdmin(request, config);
+      if (url.pathname === "/v1/admin/session" && request.method === "GET") return json({ user: actor.user, role: actor.role, expiresAt: actor.expiresAt });
+      if (url.pathname === "/v1/admin/logout" && request.method === "POST") return json(await logoutAdmin(request, config));
+      if (url.pathname === "/v1/admin/cases" && request.method === "GET") return json(await listCases(config, url));
+      const caseMatch = /^\/v1\/admin\/cases\/([^/]+)$/.exec(url.pathname);
+      if (caseMatch && request.method === "GET") return json({ case: await getCase(config, caseMatch[1]) });
+      if (caseMatch && request.method === "PATCH") return json({ case: await updateCase(config, caseMatch[1], await bodyJson(request), actor) });
+    }
+    if (url.pathname === "/v1/case-progress" && request.method === "GET") return json({ updates: await publicProgress(config), officialSubmissionConnected: false });
+
+    if (url.pathname === "/v1/assistant/status" && request.method === "GET") return json(assistantStatus(config));
+    if (url.pathname === "/v1/assistant/chat" && request.method === "POST") return json(await assistantTurn(await bodyJson(request, 4_300_000), config));
+    if (url.pathname === "/v1/assistant/commit" && request.method === "POST") return json(await commitAssistant(await bodyJson(request), config), 201);
 
     if (url.pathname === "/v1/reports" && request.method === "GET") {
       const limit = Number(url.searchParams.get("limit") ?? "100");
-      return json({ version: "1", reports: await listReports(config, limit) });
+      const [reports, updates] = await Promise.all([listReports(config, limit), publicProgress(config)]);
+      return json({ version: "1", reports: reports.map((report) => { const progress = updates.find((row) => row.caseId === report.id); return { ...report, ...(progress ? { managementProgress: progress } : {}) }; }) });
     }
     if (url.pathname === "/v1/reports" && request.method === "POST") {
       const body = await bodyJson(request, 4_300_000);

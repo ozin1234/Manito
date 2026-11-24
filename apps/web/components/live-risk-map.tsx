@@ -6,12 +6,17 @@ import { AlertTriangle, Cloud, CloudRain, Layers3, LocateFixed, MapPin, Moon, Pl
 import type { TrafficSnapshot } from "@/lib/groad-api";
 import { locationErrorMessage, locationPreflight } from "@/lib/location-diagnostics";
 import { GpsAccessHint } from "./gps-access-hint";
+import type { ReportTopic } from "@/lib/report-topics";
+import type { ReportIssueType } from "@/lib/report-issue-types";
+import { reportIssueLabel } from "@/lib/report-issue-types";
+import type { PublicCaseUpdate } from "@/lib/case-types";
 
 export type ReportCategory = "danger" | "near_miss" | "caution";
 export type SafetyReport = {
-  id: string; category: ReportCategory; title: string; summary: string; description: string;
+  id: string; topic?: ReportTopic; issueType?: ReportIssueType; category: ReportCategory; title: string; summary: string; description: string;
   lat: number; lng: number; photoUrl?: string; createdAt: string; status: string;
   agencyStatus?: string; summarySource?: string;
+  managementProgress?: PublicCaseUpdate;
   locationSource?: "gps" | "map"; locationAccuracyM?: number | null; locationCapturedAt?: string | null;
 };
 type Coordinate = { lat: number; lng: number };
@@ -41,11 +46,13 @@ function weatherLabel(value: Weather) {
   return "맑음";
 }
 
-export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, onNotice }: {
+export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, onNotice, pickingLocation = false, showCategoryFilter = true }: {
   reports: SafetyReport[];
   onSelectReport?: (report: SafetyReport) => void;
   onNewReportAt: (point: Coordinate) => void;
   onNotice: (message: string) => void;
+  pickingLocation?: boolean;
+  showCategoryFilter?: boolean;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -102,6 +109,15 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
       userMarkerRef.current = null; accuracyRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !pickingLocation) return;
+    const select = (event: L.LeafletMouseEvent) => onNewReportAt({ lat: event.latlng.lat, lng: event.latlng.lng });
+    map.getContainer().style.cursor = "crosshair";
+    map.on("click", select);
+    return () => { map.off("click", select); map.getContainer().style.cursor = ""; };
+  }, [pickingLocation, onNewReportAt]);
 
   useEffect(() => {
     const map = mapRef.current, tiles = baseRef.current;
@@ -224,10 +240,10 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
   const WeatherIcon = condition === "눈" ? Snowflake : condition === "비" ? CloudRain : condition === "흐림" || condition === "안개" ? Cloud : weather?.isDay ? Sun : Moon;
 
   return <div className={`gr-safety-map${weather && !weather.isDay ? " is-night" : ""}`}>
-    <div ref={elementRef} className="gr-safety-map-canvas" role="application" aria-label="강원 도로 안전 제보 지도" />
+    <div ref={elementRef} className="gr-safety-map-canvas" role="application" aria-label="K-ROAD 현장 지도" />
     {condition && <div className="gr-map-weather" title="Open-Meteo 기상 모델 자료 · 현장 실측값이 아닙니다."><WeatherIcon size={16} /> {Math.round(weather!.temperatureC)}° · {condition} <small>기상 모델</small></div>}
-    <div className="gr-map-category-filter" role="group" aria-label="제보 유형 필터">{categories.map(({ id, label }) =>
-      <button key={id} type="button" className={visible[id] ? `active ${id}` : ""} onClick={() => setVisible(state => ({ ...state, [id]: !state[id] }))}><span>!</span>{label}</button>)}</div>
+    {showCategoryFilter && <div className="gr-map-category-filter" role="group" aria-label="위험도 필터">{categories.map(({ id, label }) =>
+      <button key={id} type="button" className={visible[id] ? `active ${id}` : ""} onClick={() => setVisible(state => ({ ...state, [id]: !state[id] }))}><span>!</span>{label}</button>)}</div>}
     <div className="gr-map-controls">
       <button type="button" onClick={startGps} aria-label={gpsPending ? "위치 요청 취소" : gpsActive ? "위치 추적 끄기" : "내 위치 추적"} title={gpsPending ? "GPS 연결 중" : "내 위치 추적"}><LocateFixed size={21} /></button>
       <button type="button" onClick={() => { if (gps) mapRef.current?.setView([gps.lat, gps.lng], 14); else startGps(); }} aria-label="내 위치로 이동" title="내 위치로 이동"><MapPin size={20} /></button>
@@ -246,10 +262,10 @@ export default function LiveRiskMap({ reports, onSelectReport, onNewReportAt, on
     {(mapError || message || trafficMessage) && <div className="gr-map-message" role="status"><span>{mapError || message || trafficMessage}</span>{message && <GpsAccessHint />}</div>}
     {layer === "recent" && <div className="gr-map-imagery-note">NASA Terra MODIS · {recentDate} 관측 · 약 250m · 실시간 도로 영상 아님</div>}
     {layer === "satellite" && <div className="gr-map-imagery-note">ESA WorldCover · 2021년 합성 영상 · 실시간 아님</div>}
-    <button type="button" className="gr-map-new-report" onClick={newReport}><Plus size={20} /> 이 위치 제보</button>
+    <button type="button" className="gr-map-new-report" onClick={newReport}><Plus size={20} /> 이 위치로 남기기</button>
     {selected && !onSelectReport && <section className="gr-map-report-detail" aria-label="제보 상세">
       <div className="gr-map-detail-top"><span className={`gr-map-detail-badge ${selected.category}`}>{labels[selected.category]}</span><button type="button" onClick={() => setSelected(null)} aria-label="제보 닫기"><X size={18} /></button></div>
-      <h2>{selected.title}</h2><p>{selected.summary}</p>
+      <h2>{selected.title}</h2>{selected.issueType && <small>{reportIssueLabel(selected.issueType)}</small>}<p>{selected.summary}</p>
       {selected.photoUrl && <img src={selected.photoUrl} alt={`${selected.title} 현장 제보 사진`} />}
       <div className="gr-map-detail-description">{selected.description}</div>
       <small>시민 제보 · {new Date(selected.createdAt).toLocaleString("ko-KR")} · 기관 제출 전</small>

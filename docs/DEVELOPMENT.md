@@ -45,7 +45,10 @@ git push -u origin feat/feature-name
 | `MANITO_MAPS_NETWORK` | 선택형 공유 지도 모드의 기존 Docker 네트워크 |
 | `OSRM_URL`, `NOMINATIM_URL`, `TILES_URL` | Node 단독 실행의 지도 서비스 주소 |
 | `ITS_API_KEY`, `ITS_LINK_SHAPES_PATH` | 선택적 ITS 인증키와 도로선 JSON/GZIP 경로 |
-| `OPENAI_API_KEY`, `GROAD_SUMMARY_MODEL` | 동의한 제보 텍스트의 선택적 외부 AI 요약 |
+| `GEMINI_API_KEY` | 우왓 사진·대화 판독과 선택적 기존 텍스트 요약의 서버 전용 키 |
+| `UWAT_MODEL` | 우왓 모델 ID, 기본 `gemini-3.5-flash-lite` |
+| `UWAT_KNOWLEDGE_PATH` | 선택적 검수 근거 JSON 경로, 미설정 시 내장 도로 안전 자료 |
+| `GROAD_SUMMARY_MODEL` | 기존 텍스트 요약의 선택적 모델 ID, 우왓 모델 기본값 재사용 |
 
 웹은 서버 설정인 `GROAD_INDEPENDENT_API_URL`, `GROAD_INDEPENDENT_API_KEY`를 사용한다. 브라우저 번들에는 키를 넣지 않는다. setup을 다시 실행하면 루트 설정으로 웹 프록시를 맞춘다. 원본 GROAD의 외부 API 키를 자동으로 가져오지 않는다.
 
@@ -70,3 +73,5 @@ git push -u origin feat/feature-name
 - 새 환경변수 이름과 설정 위치
 - DB·데이터·API 계약에 필요한 변경
 - 실제 확인한 항목과 아직 확인하지 않은 항목
+
+우왓의 API 계약·개인정보·모의 검증 범위는 [Gemini 구현 인계](UWAT_GEMINI.md)를 따른다.

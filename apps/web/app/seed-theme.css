@@ -1,10 +1,10 @@
-/* SEED primitives stay on their native recipes; this adapts the surrounding G-ROAD surfaces. */
+/* SEED primitives stay on their native recipes; this adapts the surrounding K-ROAD surfaces. */
 .seed-groad {
   --groad-danger: #ec4c5c;
   --groad-near-miss: #fa9c37;
   --groad-caution: #edc94d;
   --groad-ink: #192544;
-  --groad-surface: #fffdf9;
+  --groad-surface: #f5f7fb;
   color: var(--groad-ink);
   background: var(--groad-surface);
   font-family: var(--seed-font-family);

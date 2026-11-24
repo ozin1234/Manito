@@ -1,11 +1,11 @@
 {
-  "name": "G-ROAD 도로 안전 제보 지도",
-  "short_name": "G-ROAD",
-  "description": "위험지역, 아차!지역, 단순주의지역을 함께 알리는 시민 제보 지도",
+  "name": "K-ROAD 우리 동네 불편과 안전",
+  "short_name": "K-ROAD",
+  "description": "생활불편·도로·안전재난을 사진과 대화로 확인하는 서비스",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#101638",
-  "theme_color": "#101638",
+  "background_color": "#f5f7fb",
+  "theme_color": "#f5f7fb",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
