@@ -96,11 +96,11 @@
     {
       "complaintId": "public-gangneung-council-5aefda4480074821",
       "matchedText": "송정동",
-      "lat": 37.7849732,
-      "lng": 128.9498758,
-      "label": "송정동 일대",
+      "lat": 37.77913,
+      "lng": 128.93353,
+      "label": "송정동 시가지 일대",
       "precision": "area",
-      "sourceUrl": "https://www.openstreetmap.org/relation/19190664",
+      "sourceUrl": "https://www.openstreetmap.org/node/415152354",
       "checkedAt": "2026-11-25"
     },
     {
