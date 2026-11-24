@@ -18,8 +18,7 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
   onBusyChange: (busy: boolean) => void;
 }) {
   const topicInfo = reportTopics.find((item) => item.id === topic)!;
-  const welcome = `우왓이에요. ${topicInfo.label} 현장 사진만 올려 주세요. 사진에서 보이는 내용을 먼저 판단하고, 구분이 어려운 부분만 확인할게요.`;
-  const [messages, setMessages] = useState<Message[]>([{ role: "assistant", text: welcome }]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [photo, setPhoto] = useState<string | null>(null);
   const [location, setLocation] = useState<UwatLocation | null>(null);
   const [reply, setReply] = useState<UwatReply | null>(null);
@@ -29,7 +28,7 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
   const busyRef = useRef(false), replyRef = useRef(reply); replyRef.current = reply;
   const topicRef = useRef(topic); topicRef.current = topic;
   const consentRef = useRef(consent); consentRef.current = consent;
-  const previousTopic = useRef(topic), bodyRef = useRef<HTMLDivElement>(null), fileRef = useRef<HTMLInputElement>(null);
+  const previousTopic = useRef(topic), bodyRef = useRef<HTMLDivElement>(null), fileRef = useRef<HTMLInputElement>(null), closeRef = useRef<HTMLButtonElement>(null);
   const sound = useAlertSound();
   const invalidateDraft = () => {
     const current = replyRef.current;
@@ -45,12 +44,18 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
     } catch { setError("사진 분석 서버에 연결하지 못했습니다. 잠시 후 다시 확인해 주세요."); }
   };
   useEffect(() => { if (open) void refreshStatus(); }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const previousFocus = document.activeElement;
+    closeRef.current?.focus({ preventScroll: true });
+    return () => { if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true }); };
+  }, [open]);
   useEffect(() => { onBusyChange(busy || preparing || locating); }, [busy, preparing, locating, onBusyChange]);
   useEffect(() => {
     if (previousTopic.current === topic) return;
     previousTopic.current = topic;
     replyRef.current = null; setReply(null); setPaused(false); setError("");
-    setMessages([{ role: "assistant", text: welcome }]);
+    setMessages([]);
   }, [topic]);
   useEffect(() => {
     if (point) { setLocation({ ...point, locationSource: "map", locationAccuracyM: null, locationCapturedAt: null }); setPaused(false); invalidateDraft(); }
@@ -129,11 +134,12 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
   };
   const question = reply?.question;
   const working = busy || preparing || locating;
-  return <aside className="sr-chat uwat-chat uwat-photo-chat" aria-label={`우왓 AI ${topicInfo.label} 사진 분석`} hidden={!open}>
-    <header><span className="sr-chat-face">!</span><div><strong>우왓 <span className="uwat-topic">{topicInfo.label}</span></strong><small>사진만 올리면 우왓이 먼저 판단해요</small></div><button type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={22}/></button></header>
-    <div className="uwat-state" role="status" aria-live="polite"><span>{preparing ? "사진을 준비하고 있어요" : busy ? "사진을 보고 판단하고 있어요" : locating ? "현장 위치를 확인하고 있어요" : paused ? "초안을 보류했어요" : question ? "사진 분석이 끝났어요. 확인이 필요해요" : "현장 사진을 올려 주세요"}</span>{working && <span className="uwat-spinner" aria-hidden="true"/>}</div>
+  return <aside className="sr-chat uwat-chat uwat-photo-chat" role="dialog" aria-label={`우왓 AI ${topicInfo.label} 사진 분석`} hidden={!open} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
+    <header><span className="sr-chat-face"><Camera size={23}/></span><div><strong>우왓 <span className="uwat-topic">{topicInfo.label}</span></strong><small>사진으로 살피는 우리 동네</small></div><button ref={closeRef} type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={21}/></button></header>
+    <div className="uwat-state" role="status" aria-live="polite"><span>{preparing ? "사진을 준비하고 있어요" : busy ? "사진을 보고 판단하고 있어요" : locating ? "현장 위치를 확인하고 있어요" : paused ? "초안을 보류했어요" : question ? "사진을 확인했어요. 답변을 골라 주세요" : "사진을 선택하면 분석을 시작해요"}</span>{working ? <span className="uwat-spinner" aria-hidden="true"/> : <span className="uwat-state-dot" aria-hidden="true"/>}</div>
     <div className="sr-chat-messages uwat-messages" ref={bodyRef}>
       {status && !status.configured && <div className="uwat-config"><strong>사진 분석 연결을 확인해 주세요</strong><p>분석 서버에 연결되지 않았습니다.</p><button type="button" onClick={() => void refreshStatus()}><RefreshCw size={15}/>연결 다시 확인</button></div>}
+      {!messages.length && !photo && <div className="uwat-welcome"><span className="uwat-welcome-symbol"><Camera size={31}/></span><h2>사진으로 시작해 볼까요?</h2><p>{topicInfo.label} 현장 사진을 올려 주세요.<br/>보이는 상황을 살피고, 필요한 것만 물어볼게요.</p><ol><li><span>1</span>사진 선택</li><li><span>2</span>AI 판단 확인</li><li><span>3</span>위치·공개 확인</li></ol><small><Bell size={15}/>확인할 내용이 생기면 알림음으로 알려요.</small></div>}
       {messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}
       {photo && <div className="uwat-photo"><img src={photo} alt="우왓이 판단할 현장 사진"/><button type="button" disabled={working} onClick={() => { setPhoto(null); setReply(null); replyRef.current = null; setLocation(null); }}>사진 제거</button><small>사진에서 위치 메타데이터를 제거했어요 · 공개 저장 전</small></div>}
       {location && <div className="uwat-location"><MapPinned size={17}/><span>{location.locationSource === "gps" ? `GPS 오차 약 ${Math.round(location.locationAccuracyM ?? 0)}m` : "직접 고른 현장 위치"}<small>{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</small></span>{reply?.phase === "needs_update" && <button type="button" disabled={working || !consent} onClick={() => void turn()}>이 위치로 확인</button>}</div>}
@@ -143,7 +149,7 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
       {reply?.sources.length ? <details className="uwat-sources"><summary>판단에 참고한 근거 {reply.sources.length}개</summary>{reply.sources.map((source) => <div key={source.id}>{source.url ? <a href={source.url} target="_blank" rel="noreferrer">{source.title}</a> : <span>{source.title}</span>}<small>{source.authority === "official" ? "공식 안내" : "K-ROAD 내부 기준"} · {source.checkedAt} 확인</small></div>)}</details> : null}
       {error && <div className="uwat-error" role="alert">{error}</div>}
       {sound.error && <p className="uwat-sound-note" role="status">{sound.error}</p>}
-      <p className="uwat-photo-help">설명을 입력하지 않아도 돼요. 사진을 선택하면 바로 분석하고, 모호한 부분은 선택지로 확인해요.</p>
+      {photo && <p className="uwat-photo-help">사진에서 구분이 어려운 부분만 선택지로 확인해요. 지도 공개는 마지막에 결정할 수 있어요.</p>}
     </div>
     <label className="uwat-consent"><input type="checkbox" checked={consent} onChange={(event) => { consentRef.current = event.target.checked; setConsent(event.target.checked); if (!event.target.checked) invalidateDraft(); }}/><span>사진을 Google Gemini에 보내 분석하는 데 동의해요<small>얼굴·번호판은 피하거나 가려 주세요. 지도 공개는 초안과 위치를 확인한 뒤 따로 결정해요.</small></span></label>
     <div className="uwat-tools"><button type="button" disabled={working || !consent || status?.configured !== true || status?.analysisMode !== "photo_only"} onClick={() => { void sound.unlock(); fileRef.current?.click(); }}><Camera size={18}/>{photo ? "다른 사진 올리기" : "사진 올려서 분석"}</button><button type="button" disabled={working} onClick={async () => { if (await sound.unlock()) sound.notify(); }}><Bell size={18}/>{sound.ready ? "알림음 확인" : "알림음 준비"}</button><input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" onChange={(event) => { const file = event.target.files?.[0]; if (file) void setPhotoFile(file); event.target.value = ""; }}/></div>

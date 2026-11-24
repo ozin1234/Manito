@@ -1,13 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Camera, ChevronRight, ExternalLink, House, Info, MapPinned, MessageCircle, Route, ShieldAlert, Sparkles, X } from "lucide-react";
+import { Bell, Building2, Camera, House, Info, MapPinned, Route, ShieldAlert, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SafetyReport } from "./live-risk-map";
 import { SeedBadge, SeedButton } from "./seed-ui";
 import { UwatChat } from "./uwat-chat";
 import { reportTopics, reportsForTopic, type ReportTopic } from "@/lib/report-topics";
-import { PublicComplaints } from "./public-complaints";
+import { PublicComplaints, PublicComplaintSources } from "./public-complaints";
 import { caseStatusLabels } from "@/lib/case-types";
 
 const LiveRiskMap = dynamic(() => import("./live-risk-map"), { ssr: false });
@@ -30,7 +30,7 @@ function ReportDetail({ report, onClose }: { report: SafetyReport; onClose: () =
   };
   return <aside className="sr-detail" aria-label="제보 상세"><div className="sr-detail-head"><SeedBadge tone={report.category === "danger" ? "critical" : report.category === "near_miss" ? "warning" : "informative"}>{labels[report.category]}</SeedBadge><button type="button" className="sr-icon-button" onClick={onClose} aria-label="제보 상세 닫기"><X size={20}/></button></div>
     {report.photoUrl ? <img className="sr-detail-photo" src={report.photoUrl} alt={`${report.title} 현장 사진`}/> : <div className="sr-no-photo"><Camera size={26}/>등록된 현장 사진 없음</div>}
-    <div className="sr-detail-body"><small>{new Date(report.createdAt).toLocaleString("ko-KR")}</small><h2>{report.title}</h2><p className="sr-detail-summary"><Sparkles size={17}/>{report.summary}</p><p>{report.description}</p><div className="sr-detail-location"><MapPinned size={17}/>{report.lat.toFixed(5)}, {report.lng.toFixed(5)} · {report.locationSource === "gps" ? `휴대폰 GPS ±${Math.round(report.locationAccuracyM ?? 0)}m` : "지도 선택 위치"}</div><span className="sr-pending">기관 접수 전 · K-ROAD 지도 제보</span>{report.managementProgress && <div className="kr-report-progress"><strong>K-ROAD 관리 · {caseStatusLabels[report.managementProgress.status]}</strong><p>{report.managementProgress.message}</p><small>{report.managementProgress.department} · {report.managementProgress.updatedAt.slice(0, 10)}</small></div>}<button type="button" className="sr-agency-button" onClick={handoff}><ExternalLink size={17}/>안전신문고에서 기관에 제출</button><small className="sr-agency-note">공식 민원은 안전신문고에서 본인이 사진과 내용을 제출해야 접수됩니다. K-ROAD 저장만으로 기관에 전달되지 않습니다.</small>{message && <p className="sr-copy-message" role="status">{message}</p>}</div>
+    <div className="sr-detail-body"><small>{new Date(report.createdAt).toLocaleString("ko-KR")}</small><h2>{report.title}</h2><p className="sr-detail-summary"><Sparkles size={17}/>{report.summary}</p><p>{report.description}</p><div className="sr-detail-location"><MapPinned size={17}/>{report.lat.toFixed(5)}, {report.lng.toFixed(5)} · {report.locationSource === "gps" ? `휴대폰 GPS ±${Math.round(report.locationAccuracyM ?? 0)}m` : "지도 선택 위치"}</div><span className="sr-pending">기관 접수 전 · K-ROAD 지도 제보</span>{report.managementProgress && <div className="kr-report-progress"><strong>K-ROAD 관리 · {caseStatusLabels[report.managementProgress.status]}</strong><p>{report.managementProgress.message}</p><small>{report.managementProgress.department} · {report.managementProgress.updatedAt.slice(0, 10)}</small></div>}<button type="button" className="sr-agency-button" onClick={handoff}><Building2 size={17}/>안전신문고에서 기관에 제출</button><small className="sr-agency-note">공식 민원은 안전신문고에서 본인이 사진과 내용을 제출해야 접수됩니다. K-ROAD 저장만으로 기관에 전달되지 않습니다.</small>{message && <p className="sr-copy-message" role="status">{message}</p>}</div>
   </aside>;
 }
 
@@ -44,9 +44,6 @@ export function GroadApp() {
   const [filter, setFilter] = useState<Category | "all">("all");
   const [topic, setTopic] = useState<ReportTopic>("road");
   const [chatBusy, setChatBusy] = useState(false);
-  const [intro, setIntro] = useState(false);
-  useEffect(() => { setIntro(!sessionStorage.getItem("groad_intro_seen")); }, []);
-  useEffect(() => { if (!intro) return; const timer = window.setTimeout(() => { setIntro(false); sessionStorage.setItem("groad_intro_seen", "1"); }, 2600); return () => window.clearTimeout(timer); }, [intro]);
   useEffect(() => {
     let active = true;
     const refresh = () => { void fetch("/api/v1/reports", { cache: "no-store" }).then(async (response) => { if (!response.ok) throw new Error(); return response.json() as Promise<{ reports?: SafetyReport[] }>; }).then((data) => { if (!active) return; const records = data.reports ?? []; setReports(records); setSelected((current) => current ? records.find((row) => row.id === current.id) ?? current : null); }).catch(() => { if (active) setNotice("지도 기록을 불러오지 못했습니다. 서버 연결을 확인해 주세요."); }); };
@@ -60,21 +57,33 @@ export function GroadApp() {
   const topicReports = reportsForTopic(reports, topic);
   const shown = filter === "all" ? topicReports : topicReports.filter((report) => report.category === filter);
   const changeTopic = (value: ReportTopic) => { if (chatBusy || value === topic) return; setTopic(value); setFilter("all"); setSelected(null); setPickingLocation(false); setChatOpen(false); };
-  return <div className="safety-app seed-groad">
-    {intro && <div className="sr-intro" onClick={() => { setIntro(false); sessionStorage.setItem("groad_intro_seen", "1"); }}><div><Brand/><strong>{"K-ROAD".split("").map((letter, index) => <span key={index} style={{ animationDelay: `${index * 170}ms` }}>{letter}</span>)}</strong><small>길 위의 위험을 함께 발견해요</small></div></div>}
-    <header className="sr-header"><Brand/><div className="sr-header-actions"><span>사진으로 확인하는 우리 동네</span><SeedButton onClick={() => setChatOpen(true)}><MessageCircle size={18}/>우왓 사진 분석</SeedButton></div></header>
-    <nav className="sr-bottom-nav" aria-label="정보 분야">{reportTopics.map((item) => { const Icon = topicIcons[item.id]; return <button type="button" key={item.id} className={topic === item.id ? "active" : ""} aria-pressed={topic === item.id} disabled={chatBusy} onClick={() => changeTopic(item.id)}><Icon size={21}/>{item.label}</button>; })}</nav>
-    <main className="sr-main"><div className="sr-map-heading"><div><span className="sr-kicker">{topicInfo.label}</span><h1>{topicInfo.heading}</h1><p>{topicInfo.examples}</p></div><a className="kr-agency-link" href="/admin">기관 관리<ExternalLink size={14}/></a></div>
-      <PublicComplaints topic={topic}/>
-      <div className="kr-map-section-heading"><h2>우왓과 함께 남긴 현장 지도</h2><span>{topicReports.length}건</span></div>
-      <div className="sr-filter" aria-label={`${topicInfo.label} 지도 표시 필터`}><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>전체 <b>{topicReports.length}</b></button>{(Object.keys(labels) as Category[]).map((category) => <button key={category} className={`${category}${filter === category ? " active" : ""}`} onClick={() => setFilter(category)}><i/>{labels[category]} <b>{topicReports.filter((report) => report.category === category).length}</b></button>)}</div>
-      {pickingLocation && <div className="uwat-map-picking" role="status">정차 상태에서 현장 위치를 지도에서 눌러 주세요.<button type="button" onClick={() => { setPickingLocation(false); setChatOpen(true); }}>취소하고 대화로</button></div>}
-      <div className="sr-map-frame"><LiveRiskMap reports={shown} onSelectReport={setSelected} pickingLocation={pickingLocation} onNewReportAt={pick} onNotice={showNotice}/>{selected && <ReportDetail report={selected} onClose={() => setSelected(null)}/>}<button type="button" className="sr-map-report" onClick={() => setChatOpen(true)}><MessageCircle size={20}/>우왓에게 알리기</button></div>
-      <section className="sr-feed"><div><span className="sr-kicker">함께 확인한 {topicInfo.label} 정보</span><h2>지도 위 새 소식</h2></div>{shown.length ? <div className="sr-feed-list">{shown.slice(0, 8).map((report) => <button type="button" key={report.id} onClick={() => setSelected(report)}><span className={`sr-feed-icon ${report.category}`}>!</span><span><strong>{report.title}</strong><small>{report.summary}</small></span><ChevronRight size={18}/></button>)}</div> : <div className="sr-feed-empty"><ShieldAlert size={25}/><strong>{filter === "all" ? `아직 공유된 ${topicInfo.label} 정보가 없습니다.` : "선택한 위험 표시에 해당하는 정보가 없습니다."}</strong><p>현장 사진을 우왓에게 올려 주세요.</p></div>}</section>
-      <div className="sr-official-note"><Info size={19}/><p>지도 공유는 기관 공식 접수와 별개입니다. AI 해석에는 오차가 있어 현장 확인이 필요하며 도로 통제를 뜻하지 않습니다.</p></div>
+  return <div className="safety-app seed-groad" data-topic={topic}>
+    <header className="sr-header"><div className="kr-header-shell">
+      <Brand/>
+      <nav className="sr-bottom-nav" aria-label="정보 분야">{reportTopics.map((item) => { const Icon = topicIcons[item.id]; return <button type="button" key={item.id} className={topic === item.id ? "active" : ""} aria-pressed={topic === item.id} disabled={chatBusy} onClick={() => changeTopic(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav>
+      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><SeedButton onClick={() => setChatOpen(true)}><Camera size={18}/>사진으로 알리기</SeedButton></div>
+    </div></header>
+    <main className="sr-main">
+      <div className="sr-map-heading"><div><span className="sr-kicker">강원특별자치도 · {topicInfo.label}</span><h1>{topicInfo.heading}</h1><p>{topicInfo.examples}</p></div><a className="kr-map-anchor" href="#field-map"><MapPinned size={17}/>현장 지도 보기</a></div>
+      <div className="kr-content-grid">
+        <aside className="kr-action-rail" aria-label="사진 분석과 공개 민원 출처">
+          <section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><Camera size={23}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/>함께 확인해요.</h2><p>사진에 보이는 상황을 살펴보고<br/>필요한 내용을 정리해 드려요.</p></div><button type="button" className="kr-photo-start" onClick={() => setChatOpen(true)}><Camera size={18}/>사진으로 알리기</button><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section>
+          <PublicComplaintSources/>
+        </aside>
+        <PublicComplaints topic={topic}/>
+      </div>
+      <section id="field-map" className="kr-map-section" aria-labelledby="field-map-heading">
+        <div className="kr-map-section-heading"><div><span className="sr-kicker">사진으로 함께 남긴 기록</span><h2 id="field-map-heading">K-ROAD 현장 지도</h2><p>우왓과 확인하고 공개한 현장 정보를 살펴보세요.</p></div><span className="kr-map-record-count"><MapPinned size={16}/>{topicReports.length}개 현장 기록</span></div>
+        <div className="sr-filter" aria-label={`${topicInfo.label} 지도 표시 필터`}><button type="button" className={filter === "all" ? "active" : ""} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>전체 <b>{topicReports.length}</b></button>{(Object.keys(labels) as Category[]).map((category) => <button type="button" key={category} className={`${category}${filter === category ? " active" : ""}`} aria-pressed={filter === category} onClick={() => setFilter(category)}><i/>{labels[category]} <b>{topicReports.filter((report) => report.category === category).length}</b></button>)}</div>
+        {pickingLocation && <div className="uwat-map-picking" role="status">현장 위치를 지도에서 눌러 주세요.<button type="button" onClick={() => { setPickingLocation(false); setChatOpen(true); }}>사진 분석으로 돌아가기</button></div>}
+        <div className="sr-map-frame"><LiveRiskMap reports={shown} onSelectReport={setSelected} pickingLocation={pickingLocation} showCategoryFilter={false} onNewReportAt={pick} onNotice={showNotice}/>{selected && <ReportDetail report={selected} onClose={() => setSelected(null)}/>}</div>
+      </section>
+      <section className="sr-feed"><div className="kr-feed-heading"><h2>함께 남긴 {topicInfo.label} 기록</h2><span>최근 공개 기록</span></div>{shown.length ? <div className="sr-feed-list">{shown.slice(0, 8).map((report) => <button type="button" key={report.id} onClick={() => { setSelected(report); document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><span className={`sr-feed-icon ${report.category}`}><MapPinned size={20}/></span><span><strong>{report.title}</strong><small>{report.summary}</small></span></button>)}</div> : <div className="sr-feed-empty"><span className="kr-empty-symbol"><MapPinned size={25}/></span><div><strong>{filter === "all" ? "이 분야의 첫 현장 기록을 기다리고 있어요." : "이 조건에 맞는 현장 기록이 없어요."}</strong><p>발견한 상황을 사진으로 남겨 주세요. 우왓이 함께 확인해요.</p></div><button type="button" onClick={() => setChatOpen(true)}><Camera size={17}/>사진으로 남기기</button></div>}</section>
+      <div className="sr-official-note"><Info size={18}/><p>공개 민원 목록과 K-ROAD 현장 기록은 별도입니다. 지도에 남긴 기록은 기관 공식 접수나 도로 통제를 뜻하지 않아요.</p></div>
+      <footer className="kr-page-footer"><span><strong>K-ROAD</strong>우리 동네 불편과 위험을 함께</span><a href="/admin"><Building2 size={15}/>기관 관리</a></footer>
     </main>
-    <button type="button" className="sr-chat-fab" onClick={() => setChatOpen(true)} aria-label="우왓 사진 분석 열기"><span>!</span><small>우왓</small></button>
-    <UwatChat open={chatOpen} topic={topic} point={point} onBusyChange={setChatBusy} onClose={() => setChatOpen(false)} onPickLocation={() => { setPickingLocation(true); setChatOpen(false); showNotice("현장 위치를 지도에서 눌러 주세요."); }} onSaved={saved} onAttention={showNotice}/>
-    {notice && <div className="sr-toast" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="알림 닫기"><X size={15}/></button></div>}
+    <button type="button" className="sr-chat-fab" onClick={() => setChatOpen(true)} aria-label="우왓 사진 분석 열기"><Camera size={21}/><span>우왓</span></button>
+    <UwatChat open={chatOpen} topic={topic} point={point} onBusyChange={setChatBusy} onClose={() => setChatOpen(false)} onPickLocation={() => { setPickingLocation(true); setChatOpen(false); showNotice("현장 위치를 지도에서 눌러 주세요."); window.setTimeout(() => document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} onSaved={saved} onAttention={showNotice}/>
+    {notice && <div className="sr-toast" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="알림 닫기"><X size={18}/></button></div>}
   </div>;
 }

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg", apple: "/icon-192.png" },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#101638" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f5f7fb" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="ko" data-seed data-seed-color-mode="light-only"><body>{children}</body></html>;
