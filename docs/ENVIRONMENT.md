@@ -1,35 +1,14 @@
-# 환경 확인 기록
+# K-ROAD 환경변수
 
-확인일: 2026-11-23 (Asia/Seoul)
+- KROAD_API_KEY: 서버 내부 API 인증값. 외부 화면·번들·로그에 공개하지 않는다.
+- KROAD_API_URL: 로컬 웹이 연결할 API 주소. 운영 Worker는 같은 서버 안에서 API를 처리한다.
+- KROAD_REPORTS_DIR: 로컬 파일 저장 경로. 운영은 D1/R2를 사용한다.
+- GEMINI_API_KEY: 사진 분석용 서버 비밀.
+- UWAT_MODEL: 기본 gemini-3.5-flash-lite.
+- UWAT_KNOWLEDGE_PATH: 로컬 검토용 일반 자료 경로. 기본 자료는 소스에 포함된다.
+- LAW_API_OC: 공식 조문 재동기화 때 사용하는 서버 설정.
+- KROAD_ADMIN_USERNAME, KROAD_ADMIN_PASSWORD_HASH, KROAD_ADMIN_SESSION_SECRET: 기관 관리자 인증.
+- KROAD_PUBLIC_ORIGIN: 운영 HTTPS 주소. 현재 https://k-road-manito.hydroai4.chatgpt.site.
+- MANITO_WEB_PORT, MANITO_API_PORT: 로컬 포트 설정.
 
-## 현재 PC에서 확인한 도구
-
-| 도구 | 확인 결과 |
-| --- | --- |
-| Git | 2.56.0.windows.4 |
-| Node.js | 24.22.3 |
-| Python | 3.10.7 |
-| pnpm | 잠금 파일과 일치하는 11.25.0으로 웹 의존성 설치 |
-| npm | 기본 터미널 PATH에서 찾지 못함, 로컬 명령은 Node 스크립트 사용 |
-| GitHub CLI | 현재 터미널 PATH에서 찾지 못함 |
-| Docker | 엔진 29.6.2 응답, 기존 지도 컨테이너 실행 확인 |
-
-Manito는 Node.js 24와 pnpm 11.25.0을 사용한다. 웹은 React 19.2.6·TypeScript 5.9.3·Vinext 1.0.0-beta.5·Vite 8.0.13·Leaflet이며 독립 API는 추가 패키지 없는 Node.js HTTP 서버다. Docker는 지도 서비스를 공유하는 선택형 실행에 사용한다.
-
-## GitHub
-
-- 저장소 소유 계정: ozin1234
-- 저장소 이름: Manito
-- 초기 공개 범위: 비공개
-- Git 인증은 기존 Windows Git Credential Manager를 사용한다.
-- 저장소 생성과 동기화에 사용한 인증값은 프로젝트 파일에 저장하지 않는다.
-
-## 재현 가능한 환경을 만들 때 추가할 내용
-
-- 런타임 및 패키지 관리자 버전
-- 의존성 잠금 파일과 설치 명령
-- 빈 값만 포함한 환경변수 예시
-- 로컬 실행·빌드·테스트 명령
-- 실제 외부 API 연결 확인 절차
-- 데이터 준비 방법과 출처
-- 배포 설정과 서비스 상태 확인 절차
+.env.example에는 빈 값만 둔다. 실제 값은 Git 제외 로컬 .env 또는 Sites 서버 환경변수에만 저장한다. 데이터베이스의 DB/R2 바인딩은 환경변수 값으로 대신하지 않는다.

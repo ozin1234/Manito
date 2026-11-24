@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "./storage.mjs";
 import path from "node:path";
 import { validPoint } from "./geo.mjs";
-import { ApiError } from "./providers.mjs";
-import { DEFAULT_GEMINI_MODEL, generateGeminiJson } from "./gemini.mjs";
-import { validateTopic, REPORT_TOPICS } from "./topics.mjs";
+import { ApiError } from "./errors.mjs";
+import { validateTopic } from "./topics.mjs";
 
 const CATEGORIES = new Set(["danger", "near_miss", "caution"]);
 const IMAGE_TYPES = new Map([
@@ -22,18 +21,6 @@ function cleanDescription(value) {
   return text;
 }
 
-function automaticDraft(description, category) {
-  const first = description.split(/(?<=[.!?。])\s+/)[0] ?? description;
-  const summary = first.length > 120 ? `${first.slice(0, 117).trimEnd()}…` : first;
-  const subject = /포트홀|도로 파손|구멍|패임/.test(description) ? "도로 파손" :
-    /낙석|돌.*떨어|토사/.test(description) ? "낙석·토사" :
-    /침수|물.*잠|빗물/.test(description) ? "침수" :
-    /결빙|빙판|블랙아이스/.test(description) ? "결빙" :
-    /신호등|표지판|가드레일/.test(description) ? "시설물 이상" :
-    category === "near_miss" ? "아차 사고 위험" : category === "danger" ? "도로 위험" : "도로 주의";
-  return { title: subject, summary, summarySource: "rule_based" };
-}
-
 export function parsePhoto(dataUrl) {
   if (dataUrl === undefined || dataUrl === null || dataUrl === "") return null;
   if (typeof dataUrl !== "string") throw new ApiError("INVALID_IMAGE", "사진 형식이 올바르지 않습니다.", 400);
@@ -44,24 +31,6 @@ export function parsePhoto(dataUrl) {
   if (!bytes.length || bytes.length > MAX_IMAGE_BYTES || !IMAGE_TYPES.get(match[1]).magic(bytes))
     throw new ApiError("INVALID_IMAGE", "사진 데이터를 확인할 수 없습니다.", 400);
   return { bytes, mime: match[1], extension: IMAGE_TYPES.get(match[1]).extension };
-}
-
-async function aiSummary(description, category, topic, config) {
-  if (!config.geminiApiKey) return null;
-  try {
-    const parsed = await generateGeminiJson({
-      key: config.geminiApiKey,
-      model: config.summaryModel || config.uwatModel || DEFAULT_GEMINI_MODEL,
-      systemInstruction: "생활불편·도로·안전재난 설명을 한국어 제목과 한 문장 요약으로 정리한다. 입력에 없는 위치, 사고, 긴급성, 기관 접수 여부를 만들지 않는다. 제목 30자 이내, 요약 120자 이내로 한다.",
-      contents: [{ role: "user", parts: [{ text: `분야: ${REPORT_TOPICS[topic].label}\n위험 분류: ${category}\n설명: ${description}` }] }],
-      schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" } }, required: ["title", "summary"], additionalProperties: false },
-      timeoutMs: 15_000, maxOutputTokens: 2000,
-    });
-    const title = typeof parsed.title === "string" ? parsed.title.replace(/\s+/g, " ").trim() : "";
-    const summary = typeof parsed.summary === "string" ? parsed.summary.replace(/\s+/g, " ").trim() : "";
-    if (!title || !summary || title.length > 30 || summary.length > 120) return null;
-    return { title, summary, summarySource: "ai" };
-  } catch { return null; }
 }
 
 function filePaths(directory, id, extension) {
@@ -82,9 +51,9 @@ export async function createReport(body, config, approvedAssistant = null) {
     throw new ApiError("INVALID_LOCATION", "GPS 정확도와 측정 시각을 확인해 주세요.", 400);
   const description = cleanDescription(body.description);
   const photo = parsePhoto(body.photoDataUrl);
-  const draft = approvedAssistant ? null : body.allowAiProcessing === true ? await aiSummary(description, body.category, topic, config) : null;
-  const summary = approvedAssistant ? { title: approvedAssistant.title, summary: approvedAssistant.summary, summarySource: "llm_rag" } : draft ?? { ...automaticDraft(description, body.category), ...(topic !== "road" ? { title: `${REPORT_TOPICS[topic].label} 현장 정보` } : {}) };
-  const id = approvedAssistant?.reportId ?? randomUUID();
+  if (!approvedAssistant?.reportId || !photo) throw new ApiError("CONFIRMATION_REQUIRED", "우왓에서 사진·초안·위치를 확인한 뒤 공개 저장해 주세요.", 409);
+  const summary = { title: approvedAssistant.title, summary: approvedAssistant.summary, summarySource: "llm_rag" };
+  const id = approvedAssistant.reportId;
   if (!/^[0-9a-f-]{36}$/.test(id)) throw new ApiError("INVALID_REPORT_ID", "저장 번호를 확인할 수 없습니다.", 400);
   const report = {
     id, topic, category: body.category, ...(approvedAssistant?.issueType ? { issueType: approvedAssistant.issueType } : {}), ...summary, description,

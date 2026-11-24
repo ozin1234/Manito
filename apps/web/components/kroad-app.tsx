@@ -3,15 +3,16 @@
 import dynamic from "next/dynamic";
 import { Bell, Building2, Camera, House, Info, MapPinned, Route, ShieldAlert, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { SafetyReport } from "./live-risk-map";
+import type { SafetyReport } from "./report-map";
 import { SeedBadge, SeedButton } from "./seed-ui";
+import { UwatIcon } from "./uwat-icon";
 import { UwatChat } from "./uwat-chat";
 import { reportTopics, reportsForTopic, type ReportTopic } from "@/lib/report-topics";
 import { PublicComplaints, PublicComplaintSources } from "./public-complaints";
 import { caseStatusLabels } from "@/lib/case-types";
 import { reportIssueLabel } from "@/lib/report-issue-types";
 
-const LiveRiskMap = dynamic(() => import("./live-risk-map"), { ssr: false });
+const ReportMap = dynamic(() => import("./report-map"), { ssr: false });
 type Category = SafetyReport["category"];
 type Point = { lat: number; lng: number };
 const labels: Record<Category, string> = { danger: "위험지역", near_miss: "아차!지역", caution: "단순주의지역" };
@@ -35,12 +36,26 @@ function ReportDetail({ report, onClose }: { report: SafetyReport; onClose: () =
   </aside>;
 }
 
-export function GroadApp() {
+export function KroadApp() {
   const [reports, setReports] = useState<SafetyReport[]>([]);
   const [selected, setSelected] = useState<SafetyReport | null>(null);
   const [point, setPoint] = useState<Point | null>(null);
   const [pickingLocation, setPickingLocation] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(false);
+  useEffect(() => {
+    try { if (sessionStorage.getItem("kroad-uwat-greeting")) return; } catch { /* The greeting needs no persistent storage. */ }
+    setShowGreeting(true);
+    const timer = window.setTimeout(() => {
+      setShowGreeting(false);
+      try { sessionStorage.setItem("kroad-uwat-greeting", "seen"); } catch { /* Storage is optional. */ }
+    }, 9000);
+    return () => window.clearTimeout(timer);
+  }, []);
+  function openUwat() {
+    setShowGreeting(false); setChatOpen(true);
+    try { sessionStorage.setItem("kroad-uwat-greeting", "seen"); } catch { /* Storage is optional. */ }
+  }
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState<Category | "all">("all");
   const [topic, setTopic] = useState<ReportTopic>("road");
@@ -58,17 +73,17 @@ export function GroadApp() {
   const topicReports = reportsForTopic(reports, topic);
   const shown = filter === "all" ? topicReports : topicReports.filter((report) => report.category === filter);
   const changeTopic = (value: ReportTopic) => { if (chatBusy || value === topic) return; setTopic(value); setFilter("all"); setSelected(null); setPickingLocation(false); setChatOpen(false); };
-  return <div className="safety-app seed-groad" data-topic={topic}>
+  return <div className="safety-app seed-kroad" data-topic={topic}>
     <header className="sr-header"><div className="kr-header-shell">
       <Brand/>
       <nav className="sr-bottom-nav" aria-label="정보 분야">{reportTopics.map((item) => { const Icon = topicIcons[item.id]; return <button type="button" key={item.id} className={topic === item.id ? "active" : ""} aria-pressed={topic === item.id} disabled={chatBusy} onClick={() => changeTopic(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav>
-      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><SeedButton onClick={() => setChatOpen(true)}><Camera size={18}/>사진으로 알리기</SeedButton></div>
+      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><SeedButton onClick={openUwat}><UwatIcon size={28}/>우왓</SeedButton></div>
     </div></header>
     <main className="sr-main">
       <div className="sr-map-heading"><div><span className="sr-kicker">강원특별자치도 · {topicInfo.label}</span><h1>{topicInfo.heading}</h1><p>{topicInfo.examples}</p></div><a className="kr-map-anchor" href="#field-map"><MapPinned size={17}/>현장 지도 보기</a></div>
       <div className="kr-content-grid">
         <aside className="kr-action-rail" aria-label="사진 분석과 공개 민원 출처">
-          <section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><Camera size={23}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/>함께 확인해요.</h2><p>사진에 보이는 상황을 살펴보고<br/>필요한 내용을 정리해 드려요.</p></div><button type="button" className="kr-photo-start" onClick={() => setChatOpen(true)}><Camera size={18}/>사진으로 알리기</button><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section>
+          <section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><UwatIcon size={45}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/> 함께 확인해요.</h2><p>사진에 보이는 상황을 살펴보고<br/>필요한 내용을 정리해 드려요.</p></div><button type="button" className="kr-photo-start" onClick={openUwat}><UwatIcon size={28}/>우왓</button><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section>
           <PublicComplaintSources/>
         </aside>
         <PublicComplaints topic={topic}/>
@@ -77,13 +92,16 @@ export function GroadApp() {
         <div className="kr-map-section-heading"><div><span className="sr-kicker">사진으로 함께 남긴 기록</span><h2 id="field-map-heading">K-ROAD 현장 지도</h2><p>우왓과 확인하고 공개한 현장 정보를 살펴보세요.</p></div><span className="kr-map-record-count"><MapPinned size={16}/>{topicReports.length}개 현장 기록</span></div>
         <div className="sr-filter" aria-label={`${topicInfo.label} 지도 표시 필터`}><button type="button" className={filter === "all" ? "active" : ""} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>전체 <b>{topicReports.length}</b></button>{(Object.keys(labels) as Category[]).map((category) => <button type="button" key={category} className={`${category}${filter === category ? " active" : ""}`} aria-pressed={filter === category} onClick={() => setFilter(category)}><i/>{labels[category]} <b>{topicReports.filter((report) => report.category === category).length}</b></button>)}</div>
         {pickingLocation && <div className="uwat-map-picking" role="status">현장 위치를 지도에서 눌러 주세요.<button type="button" onClick={() => { setPickingLocation(false); setChatOpen(true); }}>사진 분석으로 돌아가기</button></div>}
-        <div className="sr-map-frame"><LiveRiskMap reports={shown} onSelectReport={setSelected} pickingLocation={pickingLocation} showCategoryFilter={false} onNewReportAt={pick} onNotice={showNotice}/>{selected && <ReportDetail report={selected} onClose={() => setSelected(null)}/>}</div>
+        <div className="sr-map-frame"><ReportMap reports={shown} onSelectReport={setSelected} pickingLocation={pickingLocation} showCategoryFilter={false} onNewReportAt={pick} onNotice={showNotice}/>{selected && <ReportDetail report={selected} onClose={() => setSelected(null)}/>}</div>
       </section>
-      <section className="sr-feed"><div className="kr-feed-heading"><h2>함께 남긴 {topicInfo.label} 기록</h2><span>최근 공개 기록</span></div>{shown.length ? <div className="sr-feed-list">{shown.slice(0, 8).map((report) => <button type="button" key={report.id} onClick={() => { setSelected(report); document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><span className={`sr-feed-icon ${report.category}`}><MapPinned size={20}/></span><span><strong>{report.title}</strong><small>{report.issueType ? `${reportIssueLabel(report.issueType)} · ` : ""}{report.summary}</small></span></button>)}</div> : <div className="sr-feed-empty"><span className="kr-empty-symbol"><MapPinned size={25}/></span><div><strong>{filter === "all" ? "이 분야의 첫 현장 기록을 기다리고 있어요." : "이 조건에 맞는 현장 기록이 없어요."}</strong><p>발견한 상황을 사진으로 남겨 주세요. 우왓이 함께 확인해요.</p></div><button type="button" onClick={() => setChatOpen(true)}><Camera size={17}/>사진으로 남기기</button></div>}</section>
+      <section className="sr-feed"><div className="kr-feed-heading"><h2>함께 남긴 {topicInfo.label} 기록</h2><span>최근 공개 기록</span></div>{shown.length ? <div className="sr-feed-list">{shown.slice(0, 8).map((report) => <button type="button" key={report.id} onClick={() => { setSelected(report); document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><span className={`sr-feed-icon ${report.category}`}><MapPinned size={20}/></span><span><strong>{report.title}</strong><small>{report.issueType ? `${reportIssueLabel(report.issueType)} · ` : ""}{report.summary}</small></span></button>)}</div> : <div className="sr-feed-empty"><span className="kr-empty-symbol"><MapPinned size={25}/></span><div><strong>{filter === "all" ? "이 분야의 첫 현장 기록을 기다리고 있어요." : "이 조건에 맞는 현장 기록이 없어요."}</strong><p>발견한 상황을 사진으로 남겨 주세요. 우왓이 함께 확인해요.</p></div><button type="button" onClick={openUwat}><UwatIcon size={27}/>우왓</button></div>}</section>
       <div className="sr-official-note"><Info size={18}/><p>공개 민원 목록과 K-ROAD 현장 기록은 별도입니다. 지도에 남긴 기록은 기관 공식 접수나 도로 통제를 뜻하지 않아요.</p></div>
       <footer className="kr-page-footer"><span><strong>K-ROAD</strong>우리 동네 불편과 위험을 함께</span><a href="/admin"><Building2 size={15}/>기관 관리</a></footer>
     </main>
-    <button type="button" className="sr-chat-fab" onClick={() => setChatOpen(true)} aria-label="우왓 사진 분석 열기"><Camera size={21}/><span>우왓</span></button>
+    <button type="button" className="sr-chat-fab uwat-launcher" hidden={chatOpen} onClick={openUwat} aria-label="우왓 열기" title="우왓에서 사진을 올려 함께 확인해요">
+      {showGreeting && <span className="uwat-greeting" aria-hidden="true"><strong>여기 있어요!</strong><small>사진은 제가 확인할게요</small></span>}
+      <UwatIcon size={43} className={showGreeting ? "uwat-icon--hello" : ""}/><span>우왓</span>
+    </button>
     <UwatChat open={chatOpen} topic={topic} point={point} onBusyChange={setChatBusy} onClose={() => setChatOpen(false)} onPickLocation={() => { setPickingLocation(true); setChatOpen(false); showNotice("현장 위치를 지도에서 눌러 주세요."); window.setTimeout(() => document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} onSaved={saved} onAttention={showNotice}/>
     {notice && <div className="sr-toast" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="알림 닫기"><X size={18}/></button></div>}
   </div>;

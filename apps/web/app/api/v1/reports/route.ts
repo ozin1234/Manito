@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 const MAX_BODY = 4_300_000;
 
 function engine() {
-  const base = process.env.GROAD_INDEPENDENT_API_URL;
-  const key = process.env.GROAD_INDEPENDENT_API_KEY;
+  const base = process.env.KROAD_API_URL;
+  const key = process.env.KROAD_API_KEY;
   if (!base || !key) throw new Error("ENGINE_NOT_CONFIGURED");
   return { base, key };
 }

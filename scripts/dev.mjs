@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
@@ -10,7 +10,7 @@ process.loadEnvFile(path.join(root, ".env"));
 const webPort = Number(process.env.MANITO_WEB_PORT || "5174");
 const apiPort = Number(process.env.MANITO_API_PORT || "8790");
 if (![webPort, apiPort].every((port) => Number.isInteger(port) && port >= 1024 && port <= 65535) || webPort === apiPort) throw new Error("Invalid or duplicate Manito ports.");
-if (!process.env.GROAD_API_KEY || process.env.GROAD_API_KEY.length < 32) throw new Error("Missing internal API key; run setup first.");
+if (!process.env.KROAD_API_KEY || process.env.KROAD_API_KEY.length < 32) throw new Error("Missing internal API key; run setup first.");
 for (const port of [webPort, apiPort]) {
   await new Promise((resolve, reject) => {
     const probe = createServer();
@@ -19,15 +19,12 @@ for (const port of [webPort, apiPort]) {
   });
 }
 
-const sharedMaps = process.argv.includes("--shared-maps");
-const compose = ["compose", "--project-name", "manito-dev", "--file", "compose.shared-maps.yaml"];
 const children = [];
 let stopping = false;
 function stop(code = 0) {
   if (stopping) return;
   stopping = true;
   for (const child of children) child.kill();
-  if (sharedMaps) spawnSync("docker", [...compose, "stop", "manito-api"], { cwd: root, stdio: "inherit" });
   process.exitCode = code;
 }
 process.on("SIGINT", () => stop());
@@ -39,13 +36,7 @@ function start(args, options) {
   child.on("exit", (code) => { if (!stopping) stop(code || 1); });
   return child;
 }
-if (sharedMaps) {
-  if (!process.env.MANITO_MAPS_NETWORK) throw new Error("Run setup with --maps-network <existing-network> first.");
-  const result = spawnSync("docker", [...compose, "up", "--build", "--detach", "manito-api"], { cwd: root, stdio: "inherit", timeout: 180_000 });
-  if (result.status !== 0) throw new Error("Manito API startup failed. Existing map services were not changed.");
-} else {
-  start(["src/server.mjs"], { cwd: path.join(root, "services/api"), env: { ...process.env, HOST: "127.0.0.1", PORT: String(apiPort), GROAD_REPORTS_DIR: path.join(root, ".local/reports") } });
-}
+start(["src/server.mjs"], { cwd: path.join(root, "services/api"), env: { ...process.env, HOST: "127.0.0.1", PORT: String(apiPort), KROAD_REPORTS_DIR: path.join(root, ".local/reports") } });
 for (let attempt = 0; attempt < 30; attempt++) {
   if (stopping) break;
   try {
@@ -56,7 +47,7 @@ for (let attempt = 0; attempt < 30; attempt++) {
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
 if (!stopping) {
-  start(["scripts/run-framework.mjs", "dev", "--port", String(webPort), "--hostname", "127.0.0.1"], { cwd: path.join(root, "apps/web"), env: { ...process.env, GROAD_INDEPENDENT_API_URL: `http://127.0.0.1:${apiPort}`, GROAD_INDEPENDENT_API_KEY: process.env.GROAD_API_KEY } });
+  start(["scripts/run-framework.mjs", "dev", "--port", String(webPort), "--hostname", "127.0.0.1"], { cwd: path.join(root, "apps/web"), env: { ...process.env, KROAD_API_URL: `http://127.0.0.1:${apiPort}`, KROAD_API_KEY: process.env.KROAD_API_KEY } });
   console.log(`Manito web: http://127.0.0.1:${webPort}/`);
   console.log("Reports use Manito storage. Phone GPS still requires a separately configured HTTPS address.");
 }

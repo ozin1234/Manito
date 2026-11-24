@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHmac, createHash } from "node:crypto";
 import { mkdir, readFile, writeFile, unlink } from "./storage.mjs";
 import path from "node:path";
-import { ApiError } from "./providers.mjs";
+import { ApiError } from "./errors.mjs";
 
 const attempts = [];
 const TOKEN = /^([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\.([A-Za-z0-9_-]{43})$/;

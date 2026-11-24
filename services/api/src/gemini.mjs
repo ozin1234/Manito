@@ -1,4 +1,4 @@
-import { ApiError } from "./providers.mjs";
+import { ApiError } from "./errors.mjs";
 
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 const MAX_ATTEMPTS = 4;

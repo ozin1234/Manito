@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 const actions = new Set(["status", "chat", "commit"]);
 async function proxy(request: Request, action: string) {
-  const base = process.env.GROAD_INDEPENDENT_API_URL;
-  const key = process.env.GROAD_INDEPENDENT_API_KEY;
+  const base = process.env.KROAD_API_URL;
+  const key = process.env.KROAD_API_KEY;
   if (!actions.has(action) || (request.method === "GET") !== (action === "status")) return NextResponse.json({ error: { code: "NOT_FOUND", message: "지원하지 않는 우왓 요청입니다." } }, { status: 404 });
   if (!base || !key) return NextResponse.json({ error: { code: "ASSISTANT_BACKEND_NOT_CONFIGURED", message: "우왓 서버 연결 설정을 확인해 주세요." } }, { status: 503 });
   try {

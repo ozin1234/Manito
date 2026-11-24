@@ -29,7 +29,7 @@ const worker = {
     const execute = Object.assign((input: Request) => hostedRequest(input, env), { publicOrigin: env.KROAD_PUBLIC_ORIGIN || new URL(request.url).origin });
     return runWithConnectorBinding(binding, () => withCloudRequest(hosted ? execute : null, () => {
       const url = new URL(request.url);
-      if (hosted && url.pathname.startsWith("/api/v1/") && url.pathname !== "/api/v1/weather" && !url.pathname.startsWith("/api/v1/tiles/recent/")) {
+      if (hosted && (url.pathname === "/api/v1" || url.pathname.startsWith("/api/v1/"))) {
         url.pathname = url.pathname.slice(4);
         return execute(new Request(url, request));
       }
