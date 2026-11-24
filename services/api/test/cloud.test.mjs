@@ -56,3 +56,12 @@ test("hosted requests reject cross-site writes and concurrent global writers",as
  assert.equal((await f.request("/assistant/chat","POST",{})).status,409);
  assert.equal(f.sql.prepare("SELECT owner FROM kroad_leases").get().owner,"other");f.sql.close();
 });
+
+import { withCloudRequest, trustedRequestOrigin } from "../../../apps/web/lib/cloud-context.mjs";
+test("hosted admin Origin checks use the trusted public origin across the internal proxy",()=>{
+ const internal="http://worker-internal.invalid/api/admin/login";
+ const bridge=Object.assign(()=>{}, {publicOrigin:"https://kroad.test"});
+ withCloudRequest(bridge,()=>assert.equal(trustedRequestOrigin(internal,undefined),"https://kroad.test"));
+ assert.equal(trustedRequestOrigin(internal,"https://configured.test"),"https://configured.test");
+ assert.equal(trustedRequestOrigin(internal,undefined),"http://worker-internal.invalid");
+});

@@ -1,4 +1,4 @@
-import { cloudRequest } from "@/lib/cloud-context.mjs";
+import { cloudRequest, trustedRequestOrigin } from "@/lib/cloud-context.mjs";
 import { NextResponse } from "next/server";
 
 const COOKIE = "kroad_admin_session";
@@ -16,7 +16,7 @@ function clear(response: NextResponse) { response.cookies.set(COOKIE, "", { http
 async function handler(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params, action = path.join("/");
   if (!/^(?:login|logout|session|cases(?:\/[a-zA-Z0-9-]+)?)$/.test(action)) return problem("NOT_FOUND", "관리 경로를 찾지 못했습니다.", 404);
-  const origin = new URL(process.env.KROAD_PUBLIC_ORIGIN || request.url).origin;
+  const origin = trustedRequestOrigin(request.url, process.env.KROAD_PUBLIC_ORIGIN);
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(new URL(origin).hostname);
   if (!local && !origin.startsWith("https://")) return problem("HTTPS_REQUIRED", "기관 관리자는 HTTPS 연결이 필요합니다.", 403);
   if (request.method !== "GET") {
