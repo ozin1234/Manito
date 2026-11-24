@@ -1,5 +1,5 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "./storage.mjs";
 import path from "node:path";
 import { ApiError } from "./providers.mjs";
 import { validPoint } from "./geo.mjs";

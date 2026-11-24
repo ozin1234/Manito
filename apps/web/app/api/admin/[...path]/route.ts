@@ -1,3 +1,4 @@
+import { cloudRequest } from "@/lib/cloud-context.mjs";
 import { NextResponse } from "next/server";
 
 const COOKIE = "kroad_admin_session";
@@ -5,6 +6,8 @@ const headers = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosnif
 const problem = (code: string, message: string, status: number) => NextResponse.json({ error: { code, message } }, { status, headers });
 function sessionToken(request: Request) { return request.headers.get("cookie")?.split(";").map((value) => value.trim()).find((value) => value.startsWith(`${COOKIE}=`))?.slice(COOKIE.length + 1) ?? ""; }
 async function engine(path: string, request: Request, body?: string) {
+  const cloud = cloudRequest();
+  if (cloud) return cloud(new Request(new URL(path, request.url), { method: request.method, headers: { "Content-Type": "application/json", "X-KROAD-Admin-Session": sessionToken(request) }, ...(body === undefined ? {} : { body }) }));
   const base = process.env.GROAD_INDEPENDENT_API_URL, key = process.env.GROAD_INDEPENDENT_API_KEY;
   if (!base || !key) throw new Error("ENGINE_NOT_CONFIGURED");
   return fetch(new URL(path, base), { method: request.method, headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-KROAD-Admin-Session": sessionToken(request) }, ...(body === undefined ? {} : { body }), cache: "no-store", signal: AbortSignal.timeout(12_000) });

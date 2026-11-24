@@ -1,3 +1,5 @@
+import { hostedRequest } from "../../../services/api/src/hosted.mjs";
+import { withCloudRequest } from "../lib/cloud-context.mjs";
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
@@ -23,7 +25,16 @@ const worker = {
         },
       };
     }
-    return runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    const hosted = env.DB && env.BUCKET;
+    const execute = (input: Request) => hostedRequest(input, env);
+    return runWithConnectorBinding(binding, () => withCloudRequest(hosted ? execute : null, () => {
+      const url = new URL(request.url);
+      if (hosted && url.pathname.startsWith("/api/v1/") && url.pathname !== "/api/v1/weather" && !url.pathname.startsWith("/api/v1/tiles/recent/")) {
+        url.pathname = url.pathname.slice(4);
+        return execute(new Request(url, request));
+      }
+      return handler.fetch(request, env, ctx);
+    }));
   },
 };
 

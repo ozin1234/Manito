@@ -1,6 +1,4 @@
 import { timingSafeEqual } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { validPoint } from "./geo.mjs";
 import { ApiError, matchTrace, planRoute, searchPlaces } from "./providers.mjs";
 import { getTraffic } from "./traffic.mjs";
@@ -9,7 +7,7 @@ import { assistantStatus, assistantTurn, commitAssistant } from "./assistant.mjs
 import { adminConfigured, loginAdmin, logoutAdmin, requireAdmin } from "./admin-auth.mjs";
 import { listCases, getCase, updateCase, publicProgress } from "./management.mjs";
 
-const riskFeed = JSON.parse(readFileSync(fileURLToPath(new URL("./risk-feed.json", import.meta.url)), "utf8"));
+import riskFeed from "./risk-feed.json" with { type: "json" };
 const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" };
 const problem = (code, message, status) => json({ version: "1", error: { code, message } }, status);
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
