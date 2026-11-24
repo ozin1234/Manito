@@ -1,5 +1,5 @@
-import { GroadApp } from "@/components/groad-app";
+import { KroadApp } from "@/components/kroad-app";
 
 export default function Home() {
-  return <GroadApp />;
+  return <KroadApp />;
 }

@@ -1,6 +1,6 @@
 declare namespace Cloudflare {
   interface Env {
-    GROAD_API_KEY?: string;
+    KROAD_API_KEY?: string;
     GEMINI_API_KEY?: string;
     UWAT_MODEL?: string;
     KROAD_PUBLIC_ORIGIN?: string;

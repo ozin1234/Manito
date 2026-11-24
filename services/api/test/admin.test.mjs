@@ -1,3 +1,5 @@
+import { createReport } from "../src/reports.mjs";
+import { randomUUID } from "node:crypto";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, rm, readdir } from "node:fs/promises";
@@ -54,7 +56,7 @@ test("case assignment, optimistic concurrency, audit history and publication sta
   assert.equal((await readdir(path.join(config.reportsDir, "_management"))).filter((name) => name.endsWith(".json")).length, 1);
 }));
 test("community reports share management flow and expose only explicitly published progress", async () => environment(async (config) => {
-  const created = await (await call(config, "reports", "POST", { category: "danger", topic: "road", description: "현장 도로에 파인 구멍을 확인했습니다.", lat: 37.874, lng: 127.734 })).json();
+  const created = { report: await createReport({ category: "danger", topic: "road", description: "현장 도로에 파인 구멍을 확인했습니다.", lat: 37.874, lng: 127.734, photoDataUrl: "data:image/jpeg;base64,/9j/2Q==" }, config, { reportId: randomUUID(), issueType: "pothole", title: "현장 사진", summary: "노면 구멍 확인", model: "test-only-model", sources: [], reason: "검사 사진", confirmedAt: new Date().toISOString() }) };
   const token = await login(config), id = created.report.id;
   const detail = await (await call(config, `admin/cases/${id}`, "GET", undefined, token)).json();
   assert.equal(detail.case.origin, "community"); assert.equal(detail.case.management.revision, 0);

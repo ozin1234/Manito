@@ -14,7 +14,7 @@ function fixture() {
   };
   const objects = new Map();
   const bucket = { async head(key) { return objects.has(key) ? {} : null; }, async put(key,data) { objects.set(key,Buffer.from(data)); }, async get(key) { const data=objects.get(key); return data ? { async text(){return data.toString();}, async arrayBuffer(){return data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);} } : null; } };
-  const env = { DB: db, BUCKET: bucket, GROAD_API_KEY: "c".repeat(64), GEMINI_API_KEY: "test-only-provider-key", KROAD_PUBLIC_ORIGIN: "https://kroad.test", KROAD_ADMIN_USERNAME: "test-admin", KROAD_ADMIN_PASSWORD_HASH: hashAdminPassword("test-password-long-enough"), KROAD_ADMIN_SESSION_SECRET: "s".repeat(64) };
+  const env = { DB: db, BUCKET: bucket, KROAD_API_KEY: "c".repeat(64), GEMINI_API_KEY: "test-only-provider-key", KROAD_PUBLIC_ORIGIN: "https://kroad.test", KROAD_ADMIN_USERNAME: "test-admin", KROAD_ADMIN_PASSWORD_HASH: hashAdminPassword("test-password-long-enough"), KROAD_ADMIN_SESSION_SECRET: "s".repeat(64) };
   const request = (path, method="GET", body, headers={}) => hostedRequest(new Request("https://kroad.test/v1"+path,{method,headers:{"Content-Type":"application/json",...(method==="GET"?{}:{Origin:"https://kroad.test"}),...headers},...(body?{body:JSON.stringify(body)}:{})}),env);
   return {sql,db,bucket,env,request};
 }

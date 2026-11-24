@@ -1,4 +1,4 @@
-import { ApiError } from "./providers.mjs";
+import { ApiError } from "./errors.mjs";
 
 export const REPORT_TOPICS = Object.freeze({
   living: { label: "생활불편", examples: "쓰레기 방치, 악취, 생활 시설물 불편" },

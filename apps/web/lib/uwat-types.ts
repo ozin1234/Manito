@@ -1,4 +1,4 @@
-import type { SafetyReport } from "@/components/live-risk-map";
+import type { SafetyReport } from "@/components/report-map";
 import type { ReportTopic } from "./report-topics";
 import type { ReportIssueType } from "./report-issue-types";
 

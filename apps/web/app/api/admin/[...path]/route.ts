@@ -8,7 +8,7 @@ function sessionToken(request: Request) { return request.headers.get("cookie")?.
 async function engine(path: string, request: Request, body?: string) {
   const cloud = cloudRequest();
   if (cloud) return cloud(new Request(new URL(path, request.url), { method: request.method, headers: { "Content-Type": "application/json", "X-KROAD-Admin-Session": sessionToken(request) }, ...(body === undefined ? {} : { body }) }));
-  const base = process.env.GROAD_INDEPENDENT_API_URL, key = process.env.GROAD_INDEPENDENT_API_KEY;
+  const base = process.env.KROAD_API_URL, key = process.env.KROAD_API_KEY;
   if (!base || !key) throw new Error("ENGINE_NOT_CONFIGURED");
   return fetch(new URL(path, base), { method: request.method, headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-KROAD-Admin-Session": sessionToken(request) }, ...(body === undefined ? {} : { body }), cache: "no-store", signal: AbortSignal.timeout(12_000) });
 }

@@ -1,5 +1,5 @@
 {
-  "name": "groad-independent-api",
+  "name": "kroad-photo-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,5 +7,7 @@
     "start": "node src/server.mjs",
     "test": "node --test"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=24"
+  }
 }

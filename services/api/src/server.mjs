@@ -3,22 +3,17 @@ import { handle } from "./api.mjs";
 import { DEFAULT_UWAT_MODEL } from "./assistant.mjs";
 
 const config = {
-  key: process.env.GROAD_API_KEY,
-  osrmUrl: process.env.OSRM_URL ?? "http://127.0.0.1:5000",
-  nominatimUrl: process.env.NOMINATIM_URL ?? "http://127.0.0.1:8080",
-  tilesUrl: process.env.TILES_URL ?? "http://127.0.0.1:8081",
-  itsApiKey: process.env.ITS_API_KEY,
-  itsShapesPath: process.env.ITS_LINK_SHAPES_PATH,
-  reportsDir: process.env.GROAD_REPORTS_DIR ?? "/app/data/reports",
+  key: process.env.KROAD_API_KEY,
+  publicOrigin: process.env.KROAD_PUBLIC_ORIGIN,
+  reportsDir: process.env.KROAD_REPORTS_DIR ?? "/app/data/reports",
   geminiApiKey: process.env.GEMINI_API_KEY,
-  summaryModel: process.env.GROAD_SUMMARY_MODEL,
   uwatModel: process.env.UWAT_MODEL || DEFAULT_UWAT_MODEL,
   knowledgePath: process.env.UWAT_KNOWLEDGE_PATH || undefined,
   adminUsername: process.env.KROAD_ADMIN_USERNAME,
   adminPasswordHash: process.env.KROAD_ADMIN_PASSWORD_HASH,
   adminSessionSecret: process.env.KROAD_ADMIN_SESSION_SECRET,
 };
-if (!config.key || config.key.length < 32) throw new Error("GROAD_API_KEY must contain at least 32 characters");
+if (!config.key || config.key.length < 32) throw new Error("KROAD_API_KEY must contain at least 32 characters");
 const port = Number(process.env.PORT ?? "8788");
 const host = process.env.HOST ?? "127.0.0.1";
 
@@ -49,4 +44,4 @@ createServer(async (incoming, outgoing) => {
     if (!outgoing.headersSent) outgoing.writeHead(400);
     outgoing.end();
   }
-}).listen(port, host, () => console.log(`K-ROAD Independent API listening on ${host}:${port}`));
+}).listen(port, host, () => console.log(`K-ROAD API listening on ${host}:${port}`));

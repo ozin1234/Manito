@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/.test(id)) return new Response(null, { status: 404 });
-  const base = process.env.GROAD_INDEPENDENT_API_URL;
-  const key = process.env.GROAD_INDEPENDENT_API_KEY;
+  const base = process.env.KROAD_API_URL;
+  const key = process.env.KROAD_API_KEY;
   if (!base || !key) return new Response(null, { status: 503 });
   try {
     const response = await fetch(new URL(`/v1/reports/${id}/photo`, base), {

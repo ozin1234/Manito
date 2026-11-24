@@ -1,55 +1,17 @@
 services:
   api:
     build: .
+    env_file:
+      - ../../.env
     environment:
-      GROAD_API_KEY: ${GROAD_API_KEY:?Set GROAD_API_KEY in .env}
-      ITS_API_KEY: ${ITS_API_KEY:-}
-      OSRM_URL: http://osrm:5000
-      NOMINATIM_URL: http://nominatim:8080
-      TILES_URL: http://tiles:80
+      KROAD_API_KEY: ${KROAD_API_KEY:?Set KROAD_API_KEY in .env}
       PORT: "8788"
       HOST: "0.0.0.0"
-      GROAD_REPORTS_DIR: /app/data/reports
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GROAD_SUMMARY_MODEL: ${GROAD_SUMMARY_MODEL:-gemini-3.8-flash}
-      UWAT_MODEL: ${UWAT_MODEL:-gemini-3.5-flash-lite}
+      KROAD_REPORTS_DIR: /app/data/reports
     ports:
       - "127.0.0.1:${MANITO_API_PORT:-8790}:8788"
     volumes:
-      - ./data/its-link-shapes.json.gz:/app/data/its-link-shapes.json.gz:ro
       - reports_data:/app/data/reports
-    depends_on:
-      - osrm
-    restart: unless-stopped
-  osrm:
-    image: ghcr.io/project-osrm/osrm-backend@sha256:e1929ae2818226284d7ef007329098a30851c11528ab3712bc9c8d68da78278b
-    command: osrm-routed --algorithm mld --mmap on /data/gangwon-buffer.osrm
-    volumes:
-      - ./data:/data:ro
-    restart: unless-stopped
-  nominatim:
-    image: mediagis/nominatim@sha256:168c30e20fbba0c2e8199fca7a8aa2640e8cc1a62f8b05b1958897796fdb38f1
-    environment:
-      PBF_PATH: /nominatim/data/gangwon-buffer.osm.pbf
-      IMPORT_STYLE: full
-    volumes:
-      - ./data/gangwon-buffer.osm.pbf:/nominatim/data/gangwon-buffer.osm.pbf
-      - nominatim_db:/var/lib/postgresql/16/main
-    shm_size: 1gb
-    restart: unless-stopped
-  tiles:
-    build:
-      context: .
-      dockerfile: Tile.Dockerfile
-    image: manito-tiles:local
-    command: run
-    volumes:
-      - tile_db:/data/database/
-      - tile_cache:/data/tiles/
-    shm_size: 256mb
     restart: unless-stopped
 volumes:
-  nominatim_db:
-  tile_db:
-  tile_cache:
   reports_data:

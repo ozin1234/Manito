@@ -1,8 +1,9 @@
 "use client";
 
 import { Bell, Camera, CircleHelp, MapPinned, Pause, RefreshCw, Sparkles, X } from "lucide-react";
+import { UwatIcon } from "./uwat-icon";
 import { useEffect, useRef, useState } from "react";
-import type { SafetyReport } from "./live-risk-map";
+import type { SafetyReport } from "./report-map";
 import { locationErrorMessage, locationPreflight } from "@/lib/location-diagnostics";
 import { prepareReportPhoto } from "@/lib/report-photo";
 import type { UwatLocation, UwatReply } from "@/lib/uwat-types";
@@ -136,11 +137,11 @@ export function UwatChat({ open, topic, point, onClose, onPickLocation, onSaved,
   const question = reply?.question;
   const working = busy || preparing || locating;
   return <aside className="sr-chat uwat-chat uwat-photo-chat" role="dialog" aria-label={`우왓 AI ${topicInfo.label} 사진 분석`} hidden={!open} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
-    <header><span className="sr-chat-face"><Camera size={23}/></span><div><strong>우왓 <span className="uwat-topic">{topicInfo.label}</span></strong><small>사진으로 살피는 우리 동네</small></div><button ref={closeRef} type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={21}/></button></header>
+    <header><span className="sr-chat-face"><UwatIcon size={39}/></span><div><strong>우왓 <span className="uwat-topic">{topicInfo.label}</span></strong><small>사진으로 살피는 우리 동네</small></div><button ref={closeRef} type="button" className="sr-icon-button" onClick={onClose} aria-label="우왓 닫기"><X size={21}/></button></header>
     <div className="uwat-state" role="status" aria-live="polite"><span>{preparing ? "사진을 준비하고 있어요" : busy ? "사진을 보고 판단하고 있어요" : locating ? "현장 위치를 확인하고 있어요" : paused ? "초안을 보류했어요" : question ? "사진을 확인했어요. 답변을 골라 주세요" : "사진을 선택하면 분석을 시작해요"}</span>{working ? <span className="uwat-spinner" aria-hidden="true"/> : <span className="uwat-state-dot" aria-hidden="true"/>}</div>
     <div className="sr-chat-messages uwat-messages" ref={bodyRef}>
       {status && !status.configured && <div className="uwat-config"><strong>사진 분석 연결을 확인해 주세요</strong><p>분석 서버에 연결되지 않았습니다.</p><button type="button" onClick={() => void refreshStatus()}><RefreshCw size={15}/>연결 다시 확인</button></div>}
-      {!messages.length && !photo && <div className="uwat-welcome"><span className="uwat-welcome-symbol"><Camera size={31}/></span><h2>사진으로 시작해 볼까요?</h2><p>{topicInfo.label} 현장 사진을 올려 주세요.<br/>보이는 상황을 살피고, 필요한 것만 물어볼게요.</p><ol><li><span>1</span>사진 선택</li><li><span>2</span>AI 판단 확인</li><li><span>3</span>위치·공개 확인</li></ol><small><Bell size={15}/>확인할 내용이 생기면 알림음으로 알려요.</small></div>}
+      {!messages.length && !photo && <div className="uwat-welcome"><span className="uwat-welcome-symbol"><UwatIcon size={64}/></span><h2>사진으로 시작해 볼까요?</h2><p>{topicInfo.label} 현장 사진을 올려 주세요.<br/>보이는 상황을 살피고, 필요한 것만 물어볼게요.</p><ol><li><span>1</span>사진 선택</li><li><span>2</span>AI 판단 확인</li><li><span>3</span>위치·공개 확인</li></ol><small><Bell size={15}/>확인할 내용이 생기면 알림음으로 알려요.</small></div>}
       {messages.map((message, index) => <p key={index} className={message.role}>{message.text}</p>)}
       {photo && <div className="uwat-photo"><img src={photo} alt="우왓이 판단할 현장 사진"/><button type="button" disabled={working} onClick={() => { setPhoto(null); setReply(null); replyRef.current = null; setLocation(null); }}>사진 제거</button><small>사진에서 위치 메타데이터를 제거했어요 · 공개 저장 전</small></div>}
       {location && <div className="uwat-location"><MapPinned size={17}/><span>{location.locationSource === "gps" ? `GPS 오차 약 ${Math.round(location.locationAccuracyM ?? 0)}m` : "직접 고른 현장 위치"}<small>{location.lat.toFixed(5)}, {location.lng.toFixed(5)}</small></span>{reply?.phase === "needs_update" && <button type="button" disabled={working || !consent} onClick={() => void turn()}>이 위치로 확인</button>}</div>}

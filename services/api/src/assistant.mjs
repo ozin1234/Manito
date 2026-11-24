@@ -1,7 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "./storage.mjs";
 import path from "node:path";
-import { ApiError } from "./providers.mjs";
+import { ApiError } from "./errors.mjs";
 import { validPoint } from "./geo.mjs";
 import { createReport, parsePhoto } from "./reports.mjs";
 import { retrieveKnowledge, retrievePhotoTaxonomy, retrieveRegulatoryGuidance, retrieveRegulatoryContext } from "./rag.mjs";

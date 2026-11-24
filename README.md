@@ -19,7 +19,7 @@
 - AI/API: 기존 Node API의 입력 검사·Gemini·BM25 기반 자료 검색·동의·관리 로직을 재사용합니다.
 - 운영 배포: Cloudflare Worker가 웹과 API를 함께 처리합니다. JSON 기록·대화·관리 이력·관리자 세션은 D1, 사진은 비공개 R2에 보관합니다. 큰 대화 사진은 D1 행에 넣지 않습니다.
 - 동시 쓰기: D1의 만료 시간 있는 쓰기 잠금과 서버 버전 검사를 함께 적용합니다. 만료되거나 바뀐 쓰기 권한으로 저장하지 않습니다.
-- 지도: 운영 기본 지도는 출처 표시·식별·캐시 정책을 지키는 OSM 타일입니다. 외부 지도 원본 서버의 가용성에 영향을 받습니다. GPS는 실제 기기 위치 권한이 필요합니다.
+- 지도: 현장 지도는 공개 기록 표시·위치 선택·GPS 확인에만 사용합니다. 기본 배경은 출처·식별·캐시 정책을 지키는 OSM 타일입니다. GPS는 실제 기기 위치 권한이 필요합니다.
 - 로컬: 파일 저장 방식과 별도 API 실행을 계속 지원합니다. 운영 저장소와 로컬 데이터는 별개입니다.
 
 ## 로컬 실행
@@ -32,6 +32,8 @@ Node.js 24 이상에서 `node --run setup` 후 `node --run dev`를 실행합니�
 - `node --run check`: 저장소 기본 설정·인증정보 패턴 검사
 - `node --env-file=.env services/api/scripts/sync-laws.mjs`: `LAW_API_OC`가 설정된 환경에서 법령 갱신
 
-관리자 설정은 `node scripts/setup.mjs --admin`으로 준비합니다. 운영 비밀은 Sites 환경변수에 별도로 등록합니다. 필요한 이름은 `GEMINI_API_KEY`, `UWAT_MODEL`, `GROAD_API_KEY`, `KROAD_ADMIN_USERNAME`, `KROAD_ADMIN_PASSWORD_HASH`, `KROAD_ADMIN_SESSION_SECRET`, `KROAD_PUBLIC_ORIGIN`입니다. `LAW_API_OC`는 법령을 재동기화할 때에만 필요합니다.
+관리자 설정은 `node scripts/setup.mjs --admin`으로 준비합니다. 운영 비밀은 Sites 환경변수에 별도로 등록합니다. 필요한 이름은 `GEMINI_API_KEY`, `UWAT_MODEL`, `KROAD_API_KEY`, `KROAD_ADMIN_USERNAME`, `KROAD_ADMIN_PASSWORD_HASH`, `KROAD_ADMIN_SESSION_SECRET`, `KROAD_PUBLIC_ORIGIN`입니다. `LAW_API_OC`는 법령을 재동기화할 때에만 필요합니다.
 
-실제 현장 사진의 정확도, 휴대폰 촬영·GPS·알림음은 자동 검사와 구분해 검증해야 합니다. 현재 구현은 사고예측 모델·음성 네비게이션·공공기관 자동 접수·관할 조례의 자동 법률 판정을 제공하지 않습니다.
+실제 현장 사진의 정확도, 휴대폰 촬영·GPS·알림음은 자동 검사와 구분해 검증해야 합니다. 사진만으로 법적 판단이나 공공기관 접수를 완료했다고 표시하지 않습니다.
+
+모든 우왓 진입 버튼은 **우왓** 이름과 같은 마스코트 아이콘을 사용합니다. 하단 안내는 사진을 올릴 위치를 짧게 알려 주며 최초 표시 후 사라집니다. 기록 작성은 우왓의 확인·동의 절차로만 진행합니다.

@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, rename, writeFile } from "./storage.mjs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { ApiError } from "./providers.mjs";
+import { ApiError } from "./errors.mjs";
 import { listReports } from "./reports.mjs";
 import { validateTopic } from "./topics.mjs";
 
