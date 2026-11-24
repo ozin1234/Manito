@@ -11,6 +11,7 @@ import type { ReportTopic } from "@/lib/report-topics";
 import type { ReportIssueType } from "@/lib/report-issue-types";
 import { reportIssueLabel } from "@/lib/report-issue-types";
 import type { PublicCaseUpdate } from "@/lib/case-types";
+import type { MappedComplaint } from "@/lib/complaint-map";
 
 export type ReportCategory = "danger" | "near_miss" | "caution";
 export type SafetyReport = {
@@ -35,8 +36,11 @@ function reportIcon(category: ReportCategory) {
 function userIcon() {
   return L.divIcon({ className: "gr-user-icon", html: '<span aria-hidden="true"></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
 }
-export default function ReportMap({ reports, onSelectReport, onNewReportAt, onNotice, pickingLocation = false, showCategoryFilter = true }: {
+export default function ReportMap({ reports, complaints = [], view, onSelectComplaint, onSelectReport, onNewReportAt, onNotice, pickingLocation = false, showCategoryFilter = true }: {
   reports: SafetyReport[];
+  complaints?: MappedComplaint[];
+  view?: { lat: number; lng: number; zoom: number };
+  onSelectComplaint?: (complaint: MappedComplaint) => void;
   onSelectReport?: (report: SafetyReport) => void;
   onNewReportAt: (point: Coordinate) => void;
   onNotice: (message: string) => void;
@@ -46,6 +50,7 @@ export default function ReportMap({ reports, onSelectReport, onNewReportAt, onNo
   const elementRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const reportLayersRef = useRef<L.LayerGroup | null>(null);
+  const complaintLayersRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const accuracyRef = useRef<L.Circle | null>(null);
   const watchRef = useRef<number | null>(null);
@@ -68,16 +73,34 @@ export default function ReportMap({ reports, onSelectReport, onNewReportAt, onNo
     street.on("tileerror", () => setMapError("지도를 불러오지 못했습니다. 연결을 확인해 주세요."));
     street.on("load", () => setMapError(""));
     reportLayersRef.current = L.layerGroup().addTo(map);
-    map.setView([37.72, 128.35], 9);
+    complaintLayersRef.current = L.layerGroup().addTo(map);
+    map.setView([view?.lat ?? 37.8813, view?.lng ?? 127.7299], view?.zoom ?? 14);
     map.on("contextmenu", (event: L.LeafletMouseEvent) => onNewReportAt({ lat: event.latlng.lat, lng: event.latlng.lng }));
     const resize = window.setTimeout(() => map.invalidateSize(), 100);
     return () => {
       window.clearTimeout(resize);
       if (watchRef.current !== null && "geolocation" in navigator) navigator.geolocation.clearWatch(watchRef.current);
-      map.remove(); mapRef.current = null; reportLayersRef.current = null;
+      map.remove(); mapRef.current = null; reportLayersRef.current = null; complaintLayersRef.current = null;
       userMarkerRef.current = null; accuracyRef.current = null;
     };
   }, []);
+
+  useEffect(() => { if (view) mapRef.current?.setView([view.lat, view.lng], view.zoom); }, [view]);
+
+  useEffect(() => {
+    const group = complaintLayersRef.current;
+    if (!group) return;
+    group.clearLayers();
+    for (const complaint of complaints) {
+      const { location } = complaint;
+      const icon = L.divIcon({ className: "kr-complaint-map-icon", html: `<span class="kr-complaint-pin ${complaint.topic}" aria-hidden="true">!</span>`, iconSize: [42, 48], iconAnchor: [21, 44] });
+      const marker = L.marker([location.lat, location.lng], { icon, title: `공개 민원 · ${complaint.title}`, alt: `공개 민원 · ${complaint.title}`, keyboard: true }).addTo(group);
+      // Only plain text enters the tooltip: complaint titles never become HTML.
+      const tooltip = document.createElement("span"); tooltip.textContent = location.label;
+      marker.bindTooltip(tooltip, { direction: "top", offset: [0, -37] });
+      marker.on("click", () => onSelectComplaint?.(complaint));
+    }
+  }, [complaints, onSelectComplaint]);
 
   useEffect(() => {
     const map = mapRef.current;
