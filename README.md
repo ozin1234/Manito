@@ -1,62 +1,37 @@
 # K-ROAD
 
-생활불편·도로·안전재난을 우왓이 설명 입력 없이 현장 사진으로 판단하고, 동의한 현장 기록을 지도에 저장하는 서비스입니다. 춘천시·강릉시의회 공개 민원 목록과 기관용 관리 화면을 연결했습니다. GitHub 저장소 이름은 협업 링크를 보존하기 위해 `Manito`를 유지합니다. 기반 프로젝트의 원본 소스와 DB는 변경하지 않습니다.
+사진으로 생활불편·도로·안전재난을 확인하고, 위치와 공개 여부를 확인한 뒤 현장 기록을 남기는 서비스입니다. GitHub 저장소 이름은 Manito입니다.
 
-공개 민원은 실제 게시판의 제목·게시일·원문 상태·링크를 수집한 목록입니다. 정확한 좌표를 임의로 만들지 않습니다. 기관 관리(`/admin`)는 별도 로그인, 담당 부서 배정, 처리 이력, 버전 충돌 방지, 시민 앱에 공개할 안내를 지원합니다. 현재는 K-ROAD 내부 관리이며 외부 기관 업무 시스템·안전신문고 전송은 연결되지 않았습니다. [수집·관리 화면 실행 및 검증 안내](docs/KROAD_PUBLIC_COMPLAINTS_ADMIN.md)를 참고하세요.
+## 현재 구현 방식
 
-## 구조
+1. 현장 사진을 선택하면 브라우저에서 크기를 줄이고 EXIF 위치 정보를 제거합니다. 설명 입력·마이크·음성 읽기 없이 사진만 서버로 보냅니다. Google Gemini 전송 동의는 먼저 받습니다.
+2. 서버는 생활불편·도로·안전재난의 분류 기준 13개 문서와 법령 적용 조건을 검색·구성해 Gemini에 제공합니다. 기본 모델은 `gemini-3.5-flash-lite`이며 서버의 `UWAT_MODEL`로 지정합니다.
+3. Gemini가 관찰 내용, 분야, 12개 구체 유형, 불확실성과 초안을 제안합니다. 정상 사진·판별 불가·기타 유형을 구분하고, 모호하면 짧은 선택지로 확인합니다. 검색 문서 ID와 응답 형식을 서버가 검증합니다.
+4. 사진 관찰과 관련 법령을 구분해 표시합니다. 조문 10개의 적용 조건을 참고하며 사진만으로 법 위반·책임·담당 기관을 확정하지 않습니다. 법령 재동기화는 국가법령정보센터 공동활용 API를 이용합니다.
+5. 휴대폰 GPS의 정확도·측정 시각을 표시하거나 사용자가 지도에서 현장 위치를 고릅니다. 최신 초안·위치·공개 동의가 확인된 경우에만 사진과 기록을 저장합니다. 분석이나 위치 변경 뒤에는 이전 공개 동의를 재사용할 수 없습니다.
+6. 결과나 확인 질문이 준비되면 화면과 짧은 알림음으로 알립니다. 실제 알림음 재생과 GPS는 브라우저 권한·사용자 조작·기기 지원에 따라 달라집니다. 운전 중 촬영·조작을 요구하지 않습니다.
+7. 생활불편·도로·안전재난 화면에서 출처·날짜가 있는 공개 민원 35건과 K-ROAD 현장 기록을 구분해 보여줍니다. 수집 범위는 춘천시와 강릉시의회이며, 수집 당시의 ‘답변완료’가 현장 해결을 뜻하지는 않습니다.
+8. 기관 관리자는 별도 로그인 후 담당 배정·상태·처리 메모·변경 이력을 관리합니다. 명시적으로 공개한 진행 안내만 시민 화면에 표시합니다. K-ROAD 저장은 공공기관 공식 민원 접수가 아닙니다.
 
-| 경로 | 내용 |
-| --- | --- |
-| `apps/web` | React 19·TypeScript·Vinext/Vite·Leaflet 웹/PWA |
-| `services/api` | Node.js 24 지도·제보 API, JSON·사진 파일 저장 |
-| `research/evidence` | 최종 완전격자 검정과 대용량 누락 목록 |
-| `.local/groad-research` | 인계 ZIP의 검증된 파일, 로컬에서만 보관 |
-| `scripts` | 설정 생성·실행·소스 인계·저장소 검증 |
+## 실행 구조
 
-우왓은 Gemini 멀티모달 LLM과 로컬 BM25 근거 검색(RAG)을 사용합니다. 사진만으로 구분하기 어려우면 짧은 확인 질문을 만들고, 최신 초안·위치에 사용자가 동의한 뒤 저장합니다. 키가 없거나 AI가 실패하면 설정·오류 상태를 표시하며 규칙 답변으로 AI 동작을 가장하지 않습니다. 저장된 내용은 기관에 자동 접수되지 않습니다.
+- 화면: React 19, TypeScript, Vinext/Vite, SEED Design, Leaflet.
+- AI/API: 기존 Node API의 입력 검사·Gemini·BM25 기반 자료 검색·동의·관리 로직을 재사용합니다.
+- 운영 배포: Cloudflare Worker가 웹과 API를 함께 처리합니다. JSON 기록·대화·관리 이력·관리자 세션은 D1, 사진은 비공개 R2에 보관합니다. 큰 대화 사진은 D1 행에 넣지 않습니다.
+- 동시 쓰기: D1의 만료 시간 있는 쓰기 잠금과 서버 버전 검사를 함께 적용합니다. 만료되거나 바뀐 쓰기 권한으로 저장하지 않습니다.
+- 지도: 운영 기본 지도는 출처 표시·식별·캐시 정책을 지키는 OSM 타일입니다. 외부 지도 원본 서버의 가용성에 영향을 받습니다. GPS는 실제 기기 위치 권한이 필요합니다.
+- 로컬: 파일 저장 방식과 별도 API 실행을 계속 지원합니다. 운영 저장소와 로컬 데이터는 별개입니다.
 
-## 설치와 실행
+## 로컬 실행
 
-Node.js 24, Python 3.10 이상, pnpm 11.25.0을 사용합니다. 웹 의존성은 기존 잠금 파일을 유지합니다.
+Node.js 24 이상에서 `node --run setup` 후 `node --run dev`를 실행합니다. 웹 기본 주소는 `http://127.0.0.1:5174/`입니다. 사진 분석에 서버의 `GEMINI_API_KEY`가 필요합니다. 키는 `.env`에만 두고 Git에 넣지 않습니다.
 
-```powershell
-pnpm --dir apps/web install --frozen-lockfile
-node scripts/setup.mjs
-# 루트 .env에 GEMINI_API_KEY 입력 후 실행
-node scripts/dev.mjs
-```
+- `node --run test`: API·위치·동의·관리·클라우드 저장 자동 검사
+- `node --run build`: 일반 웹 빌드
+- `node --run build:cloud`: Worker 빌드와 운영 산출물 준비
+- `node --run check`: 저장소 기본 설정·인증정보 패턴 검사
+- `node --env-file=.env services/api/scripts/sync-laws.mjs`: `LAW_API_OC`가 설정된 환경에서 법령 갱신
 
-기관 관리자 계정은 `node scripts/setup.mjs --admin`으로 생성합니다. 새 계정의 접속 정보는 Git에서 제외되는 `.local/kroad-admin-access.txt`에 저장합니다. 비밀번호는 서버 환경변수에 scrypt 해시로만 저장하며 기존 Gemini·지도 설정은 유지합니다.
+관리자 설정은 `node scripts/setup.mjs --admin`으로 준비합니다. 운영 비밀은 Sites 환경변수에 별도로 등록합니다. 필요한 이름은 `GEMINI_API_KEY`, `UWAT_MODEL`, `GROAD_API_KEY`, `KROAD_ADMIN_USERNAME`, `KROAD_ADMIN_PASSWORD_HASH`, `KROAD_ADMIN_SESSION_SECRET`, `KROAD_PUBLIC_ORIGIN`입니다. `LAW_API_OC`는 법령을 재동기화할 때에만 필요합니다.
 
-기본 주소는 웹 `http://127.0.0.1:5174/`, API `http://127.0.0.1:8790/health`입니다. 기본 실행은 제보 API를 독립적으로 띄웁니다. 지도·주소 검색에는 별도 OSM 타일·Nominatim·OSRM 서비스가 필요합니다.
-
-현재 PC에서 기존 지도 컨테이너를 조회용으로 공유하려면:
-
-```powershell
-node scripts/setup.mjs --maps-network groad_independent_default
-node scripts/dev.mjs --shared-maps
-```
-
-이 모드는 Docker Desktop과 해당 네트워크의 지도 서비스가 필요합니다. Manito API와 제보 볼륨은 `manito-dev` 프로젝트로 새로 생성합니다. 기존 프로젝트의 제보 API와 DB는 사용하지 않습니다. 종료할 때 Manito API만 중지하고 제보 볼륨을 유지합니다.
-
-## Gemini 설정
-
-[Google AI Studio](https://aistudio.google.com/api-keys)에서 키를 만들고 루트 `.env`의 `GEMINI_API_KEY=` 뒤에 입력합니다. `UWAT_MODEL` 기본값은 `gemini-3.5-flash-lite`이며 서버를 재시작해야 적용됩니다. 키를 채팅·Git·웹 코드에 넣지 않습니다. 사진만으로 먼저 판단하며 설명 입력·마이크·음성 읽기는 제공하지 않습니다. 분석 결과와 확인 질문이 준비되면 짧은 알림음을 재생합니다. [설정과 검증 범위](docs/UWAT_GEMINI.md)를 확인하세요.
-
-## 검증
-
-```powershell
-python scripts/check_repository.py
-node --run test
-node --run build
-```
-
-- [실행·Git·환경변수](docs/DEVELOPMENT.md)
-- [GROAD 인계 기준과 구현 한계](docs/GROAD_BASELINE.md)
-- [프로젝트 범위](docs/PROJECT_BRIEF.md)
-- [환경 확인 기록](docs/ENVIRONMENT.md)
-- [소스 및 연구 자료 해시](docs/GROAD_IMPORT_MANIFEST.json)
-- [이번 인계의 검증 기록](docs/VALIDATION_20261123.md)
-
-기존 연구의 최종 검정은 기상·교통·도로 변수 추가에 따른 예측력의 유의한 개선을 입증하지 못했습니다. 연구 근거로 보관하며 시민 제보를 검증된 사고확률로 표시하지 않습니다.
+실제 현장 사진의 정확도, 휴대폰 촬영·GPS·알림음은 자동 검사와 구분해 검증해야 합니다. 현재 구현은 사고예측 모델·음성 네비게이션·공공기관 자동 접수·관할 조례의 자동 법률 판정을 제공하지 않습니다.

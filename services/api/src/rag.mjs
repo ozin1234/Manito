@@ -1,9 +1,17 @@
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, registerBundledJson } from "./storage.mjs";
 import { fileURLToPath } from "node:url";
 
-const defaultPath = fileURLToPath(new URL("./knowledge/road-safety.json", import.meta.url));
-const photoPath = fileURLToPath(new URL("./knowledge/photo-classification.json", import.meta.url));
-const regulationPath = fileURLToPath(new URL("./knowledge/regulations.json", import.meta.url));
+const corpusPath = name => import.meta.url?.startsWith("file:")
+  ? fileURLToPath(new URL("./knowledge/" + name, import.meta.url)) : "kroad-bundled:" + name;
+const defaultPath = corpusPath("road-safety.json");
+const photoPath = corpusPath("photo-classification.json");
+const regulationPath = corpusPath("regulations.json");
+import roadKnowledge from "./knowledge/road-safety.json" with { type: "json" };
+import photoKnowledge from "./knowledge/photo-classification.json" with { type: "json" };
+import regulations from "./knowledge/regulations.json" with { type: "json" };
+registerBundledJson(defaultPath, roadKnowledge);
+registerBundledJson(photoPath, photoKnowledge);
+registerBundledJson(regulationPath, regulations);
 const indexes = new Map();
 export function tokenize(text) {
   const words = String(text).toLowerCase().match(/[a-z0-9]+|[가-힣]+/g) ?? [];

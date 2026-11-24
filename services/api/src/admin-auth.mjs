@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHmac, createHash } from "node:crypto";
-import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink } from "./storage.mjs";
 import path from "node:path";
 import { ApiError } from "./providers.mjs";
 

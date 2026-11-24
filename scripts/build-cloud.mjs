@@ -1,0 +1,13 @@
+import { spawnSync } from "node:child_process";
+import { cpSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import path from "node:path";
+const root = process.cwd();
+const helper = process.argv[2];
+const build = spawnSync(process.execPath, (helper ? [helper] : ["node_modules/vite/bin/vite.js", "build"]), { cwd: path.join(root,"apps/web"), stdio: "inherit", windowsHide: true, env: { ...process.env, KROAD_CLOUD_BUILD: "1" } });
+if (build.status !== 0) process.exit(build.status ?? 1);
+const target = path.resolve(root, "dist");
+const hosting = JSON.parse(readFileSync(path.join(root,".openai/hosting.json"),"utf8"));
+if (!hosting.project_id || target !== path.join(root,"dist") || path.relative(root,target) !== "dist") throw new Error("Unsafe build destination");
+rmSync(target, { recursive: true, force: true });
+mkdirSync(target, { recursive: true });
+cpSync(path.join(root,"apps/web/dist"),path.join(root,"dist"), { recursive: true });

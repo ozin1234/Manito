@@ -1,13 +1,11 @@
-import { readFileSync } from "node:fs";
-import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, writeFile } from "./storage.mjs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { ApiError } from "./providers.mjs";
 import { listReports } from "./reports.mjs";
 import { validateTopic } from "./topics.mjs";
 
-const feed = JSON.parse(readFileSync(fileURLToPath(new URL("./public-complaints.json", import.meta.url)), "utf8"));
+import feed from "./public-complaints.json" with { type: "json" };
 const busy = new Set();
 export const caseStatuses = ["unassigned", "reviewing", "assigned", "in_progress", "resolved", "closed"];
 const nextStates = { unassigned: ["reviewing", "assigned"], reviewing: ["assigned", "in_progress", "closed"], assigned: ["reviewing", "in_progress"], in_progress: ["reviewing", "resolved"], resolved: ["in_progress", "closed"], closed: ["reviewing"] };
