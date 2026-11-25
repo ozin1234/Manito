@@ -31,7 +31,7 @@ const schema = {
   type: "object", additionalProperties: false,
   properties: {
     intent: { type: "string", enum: ["road_report", "no_issue", "help", "out_of_scope"] }, reply: limitedText(TEXT_LIMITS.reply),
-    suggestedTopic: { type: "string", enum: ["living", "road", "safety", "unknown"] },
+    suggestedTopic: { type: "string", enum: ["living", "road", "safety", "unknown"], description: "현재 탐색 탭이 아니라 구체 유형에 해당하는 분야다. flooding, ice_risk, rockfall, safety_facility는 safety다. pothole, road_damage, road_obstruction, vehicle_incident는 road다. 쓰레기·생활 시설물 유형은 living이다." },
     issueType: { type: "string", enum: ["trash_scattered", "trash_pile", "streetlight_fault", "facility_damage", "pothole", "road_damage", "road_obstruction", "vehicle_incident", "flooding", "ice_risk", "rockfall", "safety_facility", "other_living", "other_road", "other_safety", "none", "unknown"] },
     uncertainty: { type: "string", enum: ["clear", "ambiguous", "insufficient"] },
     observations: limitedList("observations"), category: { type: "string", enum: ["danger", "near_miss", "caution", "unknown"] },
@@ -108,11 +108,17 @@ function validateAnalysis(value, sources, regulatoryContext = []) {
   if (value.category === "unknown") value.category = null;
   if (!value.reply.trim() || !["danger", "near_miss", "caution", null].includes(value.category)) fail();
   if (value.suggestedTopic === "unknown") value.suggestedTopic = null;
-  if (!["living", "road", "safety", null].includes(value.suggestedTopic) || (value.ready && !value.suggestedTopic)) fail();
+  if (!["living", "road", "safety", null].includes(value.suggestedTopic) || (value.ready && !value.suggestedTopic)) fail("classification:topic");
   const issueTopics = { living: ["trash_scattered", "trash_pile", "streetlight_fault", "facility_damage", "other_living"], road: ["pothole", "road_damage", "road_obstruction", "vehicle_incident", "other_road"], safety: ["flooding", "ice_risk", "rockfall", "safety_facility", "other_safety"] };
   if (value.issueType === "unknown") value.issueType = null;
-  if (value.issueType === "none" && value.intent !== "no_issue") fail();
-  if (value.issueType !== null && value.issueType !== "none" && !issueTopics[value.suggestedTopic]?.includes(value.issueType)) fail();
+  if (value.issueType === "none" && value.intent !== "no_issue") fail("classification:no_issue");
+  if (value.issueType !== null && value.issueType !== "none") {
+    const canonicalTopic = Object.keys(issueTopics).find((topic) => issueTopics[topic].includes(value.issueType));
+    if (!canonicalTopic || !value.suggestedTopic) fail("classification:issue_type");
+    // This is a unique product taxonomy lookup, not another photo judgment.
+    // Keep the model's issue, uncertainty and readiness unchanged.
+    value.suggestedTopic = canonicalTopic;
+  }
   if (["other_living", "other_road", "other_safety"].includes(value.issueType) && value.ready) fail();
   if (value.ready && (!value.issueType || value.issueType === "none")) fail();
   for (const [key, { count: limit, itemLength }] of Object.entries(LIST_LIMITS)) {
