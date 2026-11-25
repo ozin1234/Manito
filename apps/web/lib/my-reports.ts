@@ -1,8 +1,11 @@
 import type { SubmittedReport } from "./uwat-types";
 import type { PublicCaseUpdate } from "./case-types";
+import type { UwatLocation } from "./uwat-types";
+import { hasReportLocation } from "./report-location.ts";
 
 export const MY_REPORTS_KEY = "kroad-my-reports-v1";
-export type MyReportReceipt = Pick<SubmittedReport, "id" | "title" | "topic" | "category" | "createdAt"> & Partial<Pick<SubmittedReport, "receiptToken" | "submission" | "summary" | "description" | "issueType" | "locationStatus" | "assistant">>;
+export type MyReportReceipt = Pick<SubmittedReport, "id" | "title" | "topic" | "category" | "createdAt"> & Partial<Pick<SubmittedReport, "receiptToken" | "submission" | "summary" | "description" | "issueType" | "locationStatus" | "assistant" | "lat" | "lng" | "locationSource" | "locationAccuracyM" | "locationCapturedAt">>;
+export type MyReportPin = Pick<MyReportReceipt, "id" | "title" | "topic" | "category" | "locationAccuracyM" | "locationSource"> & { lat: number; lng: number };
 export function readMyReports(raw: string | null): MyReportReceipt[] {
   try {
     const rows: unknown = JSON.parse(raw ?? "[]"); if (!Array.isArray(rows)) return [];
@@ -16,6 +19,11 @@ export function readMyReports(raw: string | null): MyReportReceipt[] {
       if (typeof row.description === "string" && row.description.length <= 2000) item.description = row.description;
       if (typeof row.issueType === "string" && row.issueType.length <= 80) item.issueType = row.issueType;
       if (["pending", "provided"].includes(row.locationStatus)) item.locationStatus = row.locationStatus;
+      if (hasReportLocation(row) && ["gps", "map"].includes(row.locationSource)) {
+        item.lat = row.lat; item.lng = row.lng; item.locationSource = row.locationSource; item.locationStatus = "provided";
+        item.locationAccuracyM = row.locationSource === "gps" && Number.isFinite(row.locationAccuracyM) && row.locationAccuracyM >= 0 ? row.locationAccuracyM : null;
+        item.locationCapturedAt = row.locationSource === "gps" && typeof row.locationCapturedAt === "string" && Number.isFinite(Date.parse(row.locationCapturedAt)) ? row.locationCapturedAt : null;
+      } else item.locationStatus = "pending";
       if (row.submission?.destination === "kroad_admin" && row.submission.method === "photo_ai" && ["photo", "multiple_choice"].includes(row.submission.confirmation) && /^KR-[A-F0-9]{8}$/.test(row.submission.reference)) item.submission = { destination: "kroad_admin", method: "photo_ai", confirmation: row.submission.confirmation, reference: row.submission.reference };
       if (row.assistant && typeof row.assistant.reason === "string") item.assistant = { reason: row.assistant.reason.slice(0, 400), answers: Array.isArray(row.assistant.answers) ? row.assistant.answers.filter((answer: { question?: unknown; answer?: unknown }) => typeof answer?.question === "string" && typeof answer.answer === "string").slice(0, 20).map((answer: { question: string; answer: string }) => ({ question: answer.question.slice(0, 300), answer: answer.answer.slice(0, 100) })) : [] };
       seen.add(row.id); result.push(item); if (result.length >= 500) break;
@@ -25,6 +33,17 @@ export function readMyReports(raw: string | null): MyReportReceipt[] {
 }
 export function rememberMyReport(receipts: MyReportReceipt[], report: MyReportReceipt): MyReportReceipt[] {
   return readMyReports(JSON.stringify([report, ...receipts.filter((item) => item.id !== report.id)]));
+}
+export function myReportPins(receipts: MyReportReceipt[], topic: string, unavailable: string[] = []): MyReportPin[] {
+  return receipts.filter((row) => row.topic === topic && row.receiptToken && row.submission?.destination === "kroad_admin" && row.locationStatus === "provided" && ["gps", "map"].includes(row.locationSource ?? "") && !unavailable.includes(row.id) && hasReportLocation(row)).map((row) => ({ id: row.id, title: row.title, topic: row.topic, category: row.category, lat: row.lat!, lng: row.lng!, locationSource: row.locationSource, locationAccuracyM: row.locationAccuracyM }));
+}
+export async function setMyReportLocation(receipt: MyReportReceipt, location: UwatLocation): Promise<MyReportReceipt> {
+  const response = await fetch(`/api/v1/reports/${receipt.id}/location`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ receiptToken: receipt.receiptToken, location }) });
+  const value = await response.json() as { report?: SubmittedReport; error?: { message?: string } };
+  if (!response.ok || value.report?.id !== receipt.id) throw new Error(value.error?.message ?? "현장 위치를 저장하지 못했습니다.");
+  const saved = rememberMyReport([], { ...value.report, receiptToken: receipt.receiptToken })[0];
+  if (!saved || !hasReportLocation(saved)) throw new Error("저장한 현장 위치를 확인하지 못했습니다.");
+  return saved;
 }
 export async function trackMyReports(receipts: MyReportReceipt[]) {
   const own = receipts.filter((item) => item.receiptToken), reports = new Map<string, MyReportReceipt>(), updates: PublicCaseUpdate[] = [], unavailable: string[] = [];

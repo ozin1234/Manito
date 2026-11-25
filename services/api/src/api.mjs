@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { ApiError } from "./errors.mjs";
 import { getStreetTile } from "./tiles.mjs";
-import { getReportPhoto, listReports, getTrackedReport } from "./reports.mjs";
+import { getReportPhoto, listReports, getTrackedReport, updateReportLocation } from "./reports.mjs";
 import { assistantStatus, assistantTurn, commitAssistant } from "./assistant.mjs";
 import { adminConfigured, loginAdmin, logoutAdmin, requireAdmin } from "./admin-auth.mjs";
 import { listCases, getCase, updateCase, publicProgress, reporterProgress } from "./management.mjs";
@@ -27,7 +27,7 @@ export async function handle(request, config) {
   try {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return json({ status: "ok", version: "1", service: "kroad" });
-    if (request.method === "GET" && ["/", "/v1"].includes(url.pathname)) return json({ name: "K-ROAD API", version: "1", analysisMode: "photo_only", submissionMode: "direct_admin", adminSubmissionConnected: true, endpoints: ["GET /v1/reports", "GET /v1/reports/{id}/photo", "POST /v1/reports/tracking", "GET /v1/assistant/status", "POST /v1/assistant/chat", "POST /v1/assistant/commit", "GET /v1/case-progress", "GET /v1/tiles/{z}/{x}/{y}.png"], officialSubmissionConnected: false });
+    if (request.method === "GET" && ["/", "/v1"].includes(url.pathname)) return json({ name: "K-ROAD API", version: "1", analysisMode: "photo_only", submissionMode: "direct_admin", adminSubmissionConnected: true, endpoints: ["GET /v1/reports", "GET /v1/reports/{id}/photo", "POST /v1/reports/tracking", "PATCH /v1/reports/{id}/location", "GET /v1/assistant/status", "POST /v1/assistant/chat", "POST /v1/assistant/commit", "GET /v1/case-progress", "GET /v1/tiles/{z}/{x}/{y}.png"], officialSubmissionConnected: false });
     if (!authorized(request, config.key)) return problem("UNAUTHORIZED", "유효한 K-ROAD API 키가 필요합니다.", 401);
     if (url.pathname === "/v1/admin/status" && request.method === "GET") return json({ configured: adminConfigured(config), officialSubmissionConnected: false });
     if (url.pathname === "/v1/admin/login" && request.method === "POST") return json(await loginAdmin(await bodyJson(request), config));
@@ -52,6 +52,11 @@ export async function handle(request, config) {
     if (url.pathname === "/v1/assistant/chat" && request.method === "POST") return json(await assistantTurn(await bodyJson(request, 4_300_000), config));
     if (url.pathname === "/v1/assistant/commit" && request.method === "POST") return json(await commitAssistant(await bodyJson(request), config), 201);
 
+    const locationUpdate = /^\/v1\/reports\/([0-9a-f-]{36})\/location$/.exec(url.pathname);
+    if (locationUpdate && request.method === "PATCH") {
+      const body = await bodyJson(request);
+      return json({ report: await updateReportLocation(config, locationUpdate[1], body?.receiptToken, body?.location) });
+    }
     if (url.pathname === "/v1/reports/tracking" && request.method === "POST") {
       const body = await bodyJson(request, 24_000);
       if (!Array.isArray(body?.receipts) || body.receipts.length > 100) return problem("INVALID_RECEIPTS", "조회할 접수증을 확인해 주세요.", 400);

@@ -19,7 +19,7 @@ async function fixture(run) {
   try { await run(config); } finally { globalThis.fetch = fetch; if (reportsDir.startsWith(os.tmpdir() + path.sep)) await rm(reportsDir, { recursive: true, force: true }); }
 }
 async function call(config, route, body, session) {
-  return handle(new Request("http://test.local/v1/" + route, { headers: { Authorization: "Bearer " + key, "Content-Type": "application/json", ...(session ? { "X-KROAD-Admin-Session": session } : {}) }, ...(body === undefined ? {} : { method: route.startsWith("admin/cases/") ? "PATCH" : "POST", body: JSON.stringify(body) }) }), config);
+  return handle(new Request("http://test.local/v1/" + route, { headers: { Authorization: "Bearer " + key, "Content-Type": "application/json", ...(session ? { "X-KROAD-Admin-Session": session } : {}) }, ...(body === undefined ? {} : { method: route.startsWith("admin/cases/") || /^reports\/[^/]+\/location$/.test(route) ? "PATCH" : "POST", body: JSON.stringify(body) }) }), config);
 }
 async function admin(config) { return (await (await call(config, "admin/login", { username: "test-admin", password: "test-password-only" })).json()).token; }
 
@@ -160,6 +160,28 @@ test("consent, provider errors and no-issue results never produce a report", asy
   globalThis.fetch = async () => new Response("denied", { status: 403 });
   assert.equal((await call(config, "assistant/chat", input())).status, 503);
   assert.equal((await readdir(config.reportsDir)).filter((name) => name.endsWith(".json")).length, 0);
+}));
+
+test("only the receipt owner can add or correct a private report location without publishing it", async () => fixture(async (config) => {
+  globalThis.fetch = async () => provider(ready());
+  const result = await (await call(config, "assistant/chat", input())).json();
+  const route = `reports/${result.report.id}/location`, receiptToken = result.report.receiptToken;
+  const location = { lat: 37.8813, lng: 127.7299, locationSource: "map" };
+  assert.equal((await call(config, route, { receiptToken: "x".repeat(43), location })).status, 404);
+  assert.equal((await call(config, route, { receiptToken, location: { ...location, lat: 0 } })).status, 400);
+  const response = await call(config, route, { receiptToken, location }); assert.equal(response.status, 200);
+  const updated = (await response.json()).report;
+  assert.equal(updated.locationStatus, "provided"); assert.equal(updated.lat, location.lat); assert.equal(updated.locationSource, "map");
+  assert.equal(updated.visibility, "private"); assert.equal(updated.description, result.report.description); assert.ok(!updated.receiptHash);
+  const gps = { ...location, locationSource: "gps", locationAccuracyM: 12, locationCapturedAt: new Date(Date.now() - 600_000).toISOString() };
+  assert.equal((await call(config, route, { receiptToken, location: gps })).status, 400);
+  gps.locationCapturedAt = new Date().toISOString();
+  assert.equal((await call(config, route, { receiptToken, location: gps })).status, 200);
+  const tracked = await (await call(config, "reports/tracking", { receipts: [{ id: result.report.id, receiptToken }] })).json();
+  assert.equal(tracked.reports[0].report.locationAccuracyM, 12);
+  assert.equal((await (await call(config, "reports")).json()).reports.length, 0);
+  const token = await admin(config), cases = (await (await call(config, "admin/cases", undefined, token)).json()).cases;
+  assert.equal(cases.find((row) => row.id === result.report.id).location.lat, location.lat);
 }));
 
 test("reporters see current processing status while internal notes and private updates stay out of public feeds", async () => fixture(async (config) => {
