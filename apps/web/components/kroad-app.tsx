@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { Bell, Building2, Camera, House, Info, MapPinned, Route, ShieldAlert, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SafetyReport } from "./report-map";
-import { SeedBadge, SeedButton } from "./seed-ui";
+import { SeedBadge } from "./seed-ui";
 import { UwatIcon } from "./uwat-icon";
 import { UwatChat } from "./uwat-chat";
 import { reportTopics, reportsForTopic, type ReportTopic } from "@/lib/report-topics";
@@ -114,7 +114,7 @@ export function KroadApp() {
   return <div className="safety-app seed-kroad" data-topic={topic}>
     <header className="sr-header"><div className="kr-header-shell"><Brand/>
       <nav className="sr-bottom-nav" aria-label="정보 분야">{reportTopics.map((item) => { const Icon = topicIcons[item.id]; return <button type="button" key={item.id} className={topic === item.id ? "active" : ""} aria-pressed={topic === item.id} disabled={chatBusy} onClick={() => changeTopic(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav>
-      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><a className="kr-my-anchor" href="#my-reports">내 제보{receipts.length > 0 && <b>{receipts.length}</b>}</a><SeedButton onClick={openUwat}><UwatIcon size={28}/>우왓</SeedButton></div>
+      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><a className="kr-my-anchor" href="#my-reports">내 제보{receipts.length > 0 && <b>{receipts.length}</b>}</a></div>
     </div></header>
     <main className="sr-main">
       <div className="sr-map-heading"><div><span className="sr-kicker">강원특별자치도 · {topicInfo.label}</span><h1>{topicInfo.heading}</h1><p>동네 지도에서 불편한 곳을 살펴보고, 발견한 상황은 우왓에 알려 주세요.</p></div></div>
@@ -130,10 +130,10 @@ export function KroadApp() {
           {mapped.length > 0 && <label className="kr-neighborhood-select"><MapPinned size={16}/><span>다른 동네</span><select aria-label="민원 위치로 이동" value={selectedPublic?.id ?? ""} onChange={(event) => { const place = mapped.find((row) => row.id === event.target.value); if (place) { setSource("all"); selectPublic(place); } }}><option value="">지도에서 볼 곳 고르기</option>{mapped.map((row) => <option key={row.id} value={row.id}>{row.location.label}</option>)}</select></label>}
           {publicRows.length > mapped.length && <p className="kr-unlocated-note">위치가 분명하지 않은 {publicRows.length - mapped.length}건은 아래 민원 목록에서 볼 수 있어요.</p>}
         </section>
-        <aside className="kr-action-rail" aria-label="사진 분석과 공개 민원 출처"><section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><UwatIcon size={45}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/> 함께 확인해요.</h2><p>사진에 보이는 상황을 살펴보고<br/>필요한 내용을 정리해 드려요.</p></div><button type="button" className="kr-photo-start" onClick={openUwat}><UwatIcon size={28}/>우왓</button><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section><PublicComplaintSources/></aside>
+        <aside className="kr-action-rail" aria-label="사진 분석과 공개 민원 출처"><section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><Camera size={23}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/> 함께 확인해요.</h2><p>오른쪽 아래 우왓에서 사진을 올리면<br/>관리자에게 바로 전달해요.</p></div><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section><PublicComplaintSources/></aside>
       </div>
       <details className="kr-public-disclosure"><summary>공개 민원 목록 <span>{publicRows.length}건 · 위치 확인 전 민원 포함</span></summary><PublicComplaints topic={topic} region={region} query={query} mapped={mapped} onSelectLocation={(value) => { setSource("all"); selectPublic(value); document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}/></details>
-      <MyReports receipts={receipts} updates={updates} unavailable={trackingUnavailable} refreshing={refreshing} refreshError={progressError} onRefresh={() => void refresh()} onStart={openUwat}/>
+      <MyReports receipts={receipts} updates={updates} unavailable={trackingUnavailable} refreshing={refreshing} refreshError={progressError} onRefresh={() => void refresh()}/>
       <div className="sr-official-note"><Info size={18}/><p>우왓에서 보낸 사진 제보는 K-ROAD 관리자 접수함에 전달됩니다. 담당 관리자가 내용을 검토하고 처리 과정을 안내합니다.</p></div>
       <footer className="kr-page-footer"><span><strong>K-ROAD</strong>우리 동네 불편과 위험을 함께</span><a href="/admin"><Building2 size={15}/>기관 관리</a></footer>
     </main>

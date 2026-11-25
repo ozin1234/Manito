@@ -1,7 +1,5 @@
 "use client";
 
-import { UwatIcon } from "./uwat-icon";
-
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { AlertTriangle, LocateFixed, MapPin, X } from "lucide-react";
@@ -157,11 +155,6 @@ export default function ReportMap({ reports, complaints = [], view, onSelectComp
     }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 20_000 }); }
     catch { setGpsPending(false); setGpsActive(false); setMessage("브라우저가 위치 요청을 막았습니다. HTTPS 주소를 Chrome 또는 Safari에서 직접 열어 주세요."); }
   };
-  const newReport = () => {
-    const center = mapRef.current?.getCenter();
-    const point = gps && gps.accuracy <= 100 ? gps : center;
-    if (point) onNewReportAt({ lat: point.lat, lng: point.lng });
-  };
   return <div className="gr-safety-map">
     <div ref={elementRef} className="gr-safety-map-canvas" role="application" aria-label="K-ROAD 현장 지도" />
     {showCategoryFilter && <div className="gr-map-category-filter" role="group" aria-label="위험도 필터">{categories.map(({ id, label }) =>
@@ -174,7 +167,6 @@ export default function ReportMap({ reports, complaints = [], view, onSelectComp
     </div>
     {gpsPending ? <div className="gr-map-gps">GPS 연결 중 · 권한 요청을 확인해 주세요</div> : gps && <div className="gr-map-gps">내 위치 · 정확도 ±{Math.round(gps.accuracy)}m</div>}
     {(mapError || message) && <div className="gr-map-message" role="status"><span>{mapError || message}</span>{message && <GpsAccessHint />}</div>}
-    <button type="button" className="gr-map-new-report" onClick={newReport} aria-label="이 위치에서 우왓 열기"><UwatIcon size={27}/>우왓</button>
     {selected && !onSelectReport && <section className="gr-map-report-detail" aria-label="제보 상세">
       <div className="gr-map-detail-top"><span className={`gr-map-detail-badge ${selected.category}`}>{labels[selected.category]}</span><button type="button" onClick={() => setSelected(null)} aria-label="제보 닫기"><X size={18} /></button></div>
       <h2>{selected.title}</h2>{selected.issueType && <small>{reportIssueLabel(selected.issueType)}</small>}<p>{selected.summary}</p>
