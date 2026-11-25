@@ -62,7 +62,7 @@ test("four clarification buttons are preserved and the fourth answer reaches pri
   let calls = 0;
   globalThis.fetch = async (_url, options) => {
     const payload = JSON.parse(options.body);
-    assert.equal(payload.generationConfig.responseJsonSchema.properties.options.maxItems, 4);
+    assert.equal(Object.hasOwn(payload.generationConfig.responseJsonSchema.properties.options, "maxItems"), false);
     assert.equal(payload.generationConfig.responseJsonSchema.properties.observations.maxItems, 6);
     if (calls++) {
       const context = JSON.parse(payload.contents.at(-1).parts[0].text).context;
@@ -82,11 +82,34 @@ test("four clarification buttons are preserved and the fourth answer reaches pri
   assert.equal(done.report.submission.confirmation, "multiple_choice");
 }));
 
-test("invalid lists and long text are repaired with feedback and cannot create an intake", async () => fixture(async (config) => {
+test("clarification choices have no fixed cap and preserve the final answer", async () => fixture(async (config) => {
+  for (const count of [5, 12, 40]) {
+    const choices = Array.from({ length: count }, (_, index) => `현장 상태 ${index + 1}`);
+    let calls = 0;
+    globalThis.fetch = async (_url, options) => {
+      const payload = JSON.parse(options.body);
+      assert.equal(Object.hasOwn(payload.generationConfig.responseJsonSchema.properties.options, "maxItems"), false);
+      if (calls++) {
+        assert.equal(JSON.parse(payload.contents.at(-1).parts[0].text).context.selectedAnswers.at(-1).answer, choices.at(-1));
+        return provider(ready());
+      }
+      return provider({ ...ambiguous(), options: choices });
+    };
+    const request = input(), firstResponse = await call(config, "assistant/chat", request);
+    assert.equal(firstResponse.status, 200);
+    const first = await firstResponse.json();
+    assert.equal(calls, 1); assert.deepEqual(first.question.options.map((row) => row.label), choices);
+    assert.equal(first.question.options.at(-1).id, String(count));
+    const done = await (await call(config, "assistant/chat", { ...request, sessionId: first.sessionId, selection: { questionId: first.question.id, optionId: String(count) } })).json();
+    assert.equal(done.phase, "submitted"); assert.equal(done.report.assistant.answers[0].answer, choices.at(-1));
+  }
+}));
+
+test("invalid observations and long text are repaired with feedback and cannot create an intake", async () => fixture(async (config) => {
   const originalWarn = console.warn, logs = [];
   console.warn = (...args) => logs.push(args);
   try {
-    for (const [changes, issue] of [[{ options: ["하나", "둘", "셋", "넷", "다섯"] }, "list:options"], [{ reason: "내".repeat(401) }, "text:reason"]]) {
+    for (const [changes, issue] of [[{ observations: Array.from({ length: 7 }, () => "관찰한 단서") }, "list:observations"], [{ reason: "내".repeat(401) }, "text:reason"]]) {
       let calls = 0;
       globalThis.fetch = async (_url, options) => {
         const payload = JSON.parse(options.body);
