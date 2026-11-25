@@ -10,6 +10,7 @@ import type { ReportIssueType } from "@/lib/report-issue-types";
 import { reportIssueLabel } from "@/lib/report-issue-types";
 import type { PublicCaseUpdate } from "@/lib/case-types";
 import type { MappedComplaint } from "@/lib/complaint-map";
+import type { MyReportPin } from "@/lib/my-reports";
 
 export type ReportCategory = "danger" | "near_miss" | "caution";
 export type SafetyReport = {
@@ -34,9 +35,11 @@ function reportIcon(category: ReportCategory) {
 function userIcon() {
   return L.divIcon({ className: "gr-user-icon", html: '<span aria-hidden="true"></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
 }
-export default function ReportMap({ reports, complaints = [], view, onSelectComplaint, onSelectReport, onNewReportAt, onNotice, pickingLocation = false, showCategoryFilter = true }: {
+export default function ReportMap({ reports, complaints = [], myReports = [], onSelectMyReport, view, onSelectComplaint, onSelectReport, onNewReportAt, onNotice, pickingLocation = false, showCategoryFilter = true }: {
   reports: SafetyReport[];
   complaints?: MappedComplaint[];
+  myReports?: MyReportPin[];
+  onSelectMyReport?: (id: string) => void;
   view?: { lat: number; lng: number; zoom: number };
   onSelectComplaint?: (complaint: MappedComplaint) => void;
   onSelectReport?: (report: SafetyReport) => void;
@@ -49,6 +52,7 @@ export default function ReportMap({ reports, complaints = [], view, onSelectComp
   const mapRef = useRef<L.Map | null>(null);
   const reportLayersRef = useRef<L.LayerGroup | null>(null);
   const complaintLayersRef = useRef<L.LayerGroup | null>(null);
+  const myLayersRef = useRef<L.LayerGroup | null>(null);
   const userMarkerRef = useRef<L.Marker | null>(null);
   const accuracyRef = useRef<L.Circle | null>(null);
   const watchRef = useRef<number | null>(null);
@@ -72,18 +76,31 @@ export default function ReportMap({ reports, complaints = [], view, onSelectComp
     street.on("load", () => setMapError(""));
     reportLayersRef.current = L.layerGroup().addTo(map);
     complaintLayersRef.current = L.layerGroup().addTo(map);
+    myLayersRef.current = L.layerGroup().addTo(map);
     map.setView([view?.lat ?? 37.8813, view?.lng ?? 127.7299], view?.zoom ?? 14);
     map.on("contextmenu", (event: L.LeafletMouseEvent) => onNewReportAt({ lat: event.latlng.lat, lng: event.latlng.lng }));
     const resize = window.setTimeout(() => map.invalidateSize(), 100);
     return () => {
       window.clearTimeout(resize);
       if (watchRef.current !== null && "geolocation" in navigator) navigator.geolocation.clearWatch(watchRef.current);
-      map.remove(); mapRef.current = null; reportLayersRef.current = null; complaintLayersRef.current = null;
+      map.remove(); mapRef.current = null; reportLayersRef.current = null; complaintLayersRef.current = null; myLayersRef.current = null;
       userMarkerRef.current = null; accuracyRef.current = null;
     };
   }, []);
 
   useEffect(() => { if (view) mapRef.current?.setView([view.lat, view.lng], view.zoom); }, [view]);
+  useEffect(() => {
+    const group = myLayersRef.current;
+    if (!group) return;
+    group.clearLayers();
+    for (const report of myReports) {
+      const icon = L.divIcon({ className: "kr-my-map-icon", html: '<span class="kr-my-map-pin" aria-hidden="true">!<small>내</small></span>', iconSize: [44, 51], iconAnchor: [22, 48] });
+      const marker = L.marker([report.lat, report.lng], { icon, title: `내 제보 · ${report.title}`, alt: `내 제보 · ${report.title}`, keyboard: true, zIndexOffset: 500 }).addTo(group);
+      const label = document.createElement("span"); label.textContent = report.title; marker.bindTooltip(label);
+      marker.on("click", () => { if (!pickingLocation) onSelectMyReport?.(report.id); });
+      if (report.locationSource === "gps" && report.locationAccuracyM) L.circle([report.lat, report.lng], { radius: report.locationAccuracyM, color: "#4c59da", weight: 1, fillOpacity: .06 }).addTo(group);
+    }
+  }, [myReports, onSelectMyReport, pickingLocation]);
 
   useEffect(() => {
     const group = complaintLayersRef.current;

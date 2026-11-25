@@ -5,6 +5,7 @@
 - `GET /health`, `GET /v1`: 상태와 API 안내
 - `GET /v1/assistant/status`, `POST /v1/assistant/chat`: 사진 분석·선택지·직접 관리자 접수
 - `POST /v1/reports/tracking`: 본인의 ID·비밀 접수증으로 비공개 제보 내용과 현재 처리 상태 조회
+- `PATCH /v1/reports/{id}/location`: 비밀 접수증으로 본인 제보의 현장 위치 등록·수정. 공개 범위와 처리 상태는 유지
 - `GET /v1/reports`, `GET /v1/reports/{id}/photo`: 기존 공개 기록만 조회
 - `GET /v1/case-progress`: 공개 자료에 대한 공개 진행 안내만 조회
 - `/v1/admin/*`: 인증된 관리자 세션·사진·접수 내용·상태 관리

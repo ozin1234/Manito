@@ -92,7 +92,7 @@ async function saveSession(config, session) {
 function validateLocation(value) {
   if (value === undefined || value === null) return null;
   if (!validPoint(value) || !["gps", "map"].includes(value.locationSource)) failure("INVALID_LOCATION", "국내 좌표와 위치 출처를 확인해 주세요.");
-  if (value.locationSource === "gps" && (!Number.isFinite(value.locationAccuracyM) || value.locationAccuracyM < 0 || value.locationAccuracyM > 10_000 || typeof value.locationCapturedAt !== "string" || !Number.isFinite(Date.parse(value.locationCapturedAt)) || Date.parse(value.locationCapturedAt) > Date.now() + 300_000)) failure("INVALID_LOCATION", "GPS 정확도와 측정시각을 확인해 주세요.");
+  if (value.locationSource === "gps" && (!Number.isFinite(value.locationAccuracyM) || value.locationAccuracyM < 0 || value.locationAccuracyM > 10_000 || typeof value.locationCapturedAt !== "string" || !Number.isFinite(Date.parse(value.locationCapturedAt)) || Math.abs(Date.now() - Date.parse(value.locationCapturedAt)) > 300_000)) failure("INVALID_LOCATION", "GPS 정확도와 측정시각을 확인해 주세요.");
   return { lat: value.lat, lng: value.lng, locationSource: value.locationSource, locationAccuracyM: value.locationSource === "gps" ? value.locationAccuracyM : null, locationCapturedAt: value.locationSource === "gps" ? value.locationCapturedAt : null };
 }
 function validateAnalysis(value, sources, regulatoryContext = []) {

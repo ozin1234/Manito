@@ -109,13 +109,30 @@ export async function listReports(config, limit = 100, { includePrivate = false 
   return reports.filter((report) => report && (includePrivate || report.visibility !== "private")).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit).map(reportView);
 }
 
-export async function getTrackedReport(config, id, receiptToken) {
+async function privateReport(config, id, receiptToken) {
   if (!/^[0-9a-f-]{36}$/.test(id ?? "") || !/^[A-Za-z0-9_-]{43}$/.test(receiptToken ?? "")) return null;
   let report;
   try { report = JSON.parse(await readFile(filePaths(config.reportsDir, id).json, "utf8")); } catch { return null; }
   const expected = Buffer.from(report.receiptHash ?? ""), actual = Buffer.from(receiptDigest(receiptToken));
   if (report.visibility !== "private" || expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
-  return reportView(report);
+  return report;
+}
+
+export async function getTrackedReport(config, id, receiptToken) {
+  const report = await privateReport(config, id, receiptToken);
+  return report ? reportView(report) : null;
+}
+
+export async function updateReportLocation(config, id, receiptToken, location) {
+  const report = await privateReport(config, id, receiptToken);
+  if (!report) throw new ApiError("REPORT_NOT_FOUND", "접수증으로 해당 제보를 확인할 수 없습니다.", 404);
+  if (!validPoint(location) || !["map", "gps"].includes(location.locationSource)) throw new ApiError("INVALID_LOCATION", "국내 현장 위치와 위치 출처를 확인해 주세요.", 400);
+  if (location.locationSource === "gps" && (!Number.isFinite(location.locationAccuracyM) || location.locationAccuracyM < 0 || location.locationAccuracyM > 10_000 || typeof location.locationCapturedAt !== "string" || !Number.isFinite(Date.parse(location.locationCapturedAt)) || Math.abs(Date.now() - Date.parse(location.locationCapturedAt)) > 300_000)) throw new ApiError("INVALID_LOCATION", "최근 5분 이내의 GPS 위치와 정확도를 확인해 주세요.", 400);
+  const updated = { ...report, lat: location.lat, lng: location.lng, locationSource: location.locationSource, locationAccuracyM: location.locationSource === "gps" ? location.locationAccuracyM : null, locationCapturedAt: location.locationSource === "gps" ? location.locationCapturedAt : null, locationStatus: "provided", locationUpdatedAt: new Date().toISOString() };
+  const filename = filePaths(config.reportsDir, id).json, temporary = `${filename}.${randomUUID()}.tmp`;
+  await writeFile(temporary, JSON.stringify(updated), { flag: "wx", mode: 0o600 });
+  await rename(temporary, filename);
+  return reportView(updated);
 }
 
 export async function getReportPhoto(config, id, { allowPrivate = false } = {}) {

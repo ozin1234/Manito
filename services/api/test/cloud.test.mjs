@@ -26,7 +26,13 @@ test("hosted direct admin intake and private receipt reads work through D1/R2 wi
     const result=await (await f.request("/assistant/chat","POST",{requestId:"12345678-1234-4123-8123-123456789abc",requestToken:"t".repeat(43),topic:"road",photoDataUrl:image,allowAiProcessing:true,submitToAdmin:true,allowAdminSubmission:true})).json();
     assert.equal(result.phase,"submitted"); assert.equal((await (await f.request("/reports")).json()).reports.length,0);
     assert.equal((await f.request("/reports/"+result.report.id+"/photo")).status,404);
+    const location = { lat:37.8813, lng:127.7299, locationSource:"map" };
+    assert.equal((await f.request("/reports/"+result.report.id+"/location","PATCH",{receiptToken:"x".repeat(43),location})).status,404);
+    const located=await f.request("/reports/"+result.report.id+"/location","PATCH",{receiptToken:result.report.receiptToken,location});
+    assert.equal(located.status,200); assert.equal((await located.json()).report.lat,location.lat);
+    assert.equal((await (await f.request("/reports")).json()).reports.length,0);
     f.sql.prepare("INSERT INTO kroad_leases VALUES('writer','another-writer',?)").run(Date.now()+120000);
+    assert.equal((await f.request("/reports/"+result.report.id+"/location","PATCH",{receiptToken:result.report.receiptToken,location})).status,409);
     const tracked=await f.request("/reports/tracking","POST",{receipts:[{id:result.report.id,receiptToken:result.report.receiptToken}]});
     assert.equal(tracked.status,200); assert.equal((await tracked.json()).reports[0].report.submission.destination,"kroad_admin");
     assert.equal(f.sql.prepare("SELECT owner FROM kroad_leases WHERE name='writer'").get().owner,"another-writer");
