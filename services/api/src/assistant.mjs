@@ -23,17 +23,21 @@ function recentCalls(store, now) {
   if (!callWindows.has(key)) callWindows.set(key, []);
   return callWindows.get(key);
 }
-const string = { type: "string" };
+const TEXT_LIMITS = { reply: 1500, title: 30, summary: 120, description: 2000, reason: 400, question: 300 };
+const LIST_LIMITS = { observations: { count: 6, itemLength: 200 }, options: { count: 4, itemLength: 100 }, sourceIds: { count: 8, itemLength: 100 } };
+const limitedText = (length) => ({ type: "string", description: `최대 ${length}자로 간결하게 작성한다.`, maxLength: length });
+const limitedList = (key) => ({ type: "array", maxItems: LIST_LIMITS[key].count, items: limitedText(LIST_LIMITS[key].itemLength) });
 const schema = {
   type: "object", additionalProperties: false,
   properties: {
-    intent: { type: "string", enum: ["road_report", "no_issue", "help", "out_of_scope"] }, reply: string,
+    intent: { type: "string", enum: ["road_report", "no_issue", "help", "out_of_scope"] }, reply: limitedText(TEXT_LIMITS.reply),
     suggestedTopic: { type: "string", enum: ["living", "road", "safety", "unknown"] },
     issueType: { type: "string", enum: ["trash_scattered", "trash_pile", "streetlight_fault", "facility_damage", "pothole", "road_damage", "road_obstruction", "vehicle_incident", "flooding", "ice_risk", "rockfall", "safety_facility", "other_living", "other_road", "other_safety", "none", "unknown"] },
     uncertainty: { type: "string", enum: ["clear", "ambiguous", "insufficient"] },
-    observations: { type: "array", items: string }, category: { type: "string", enum: ["danger", "near_miss", "caution", "unknown"] },
-    title: string, summary: string, description: string, reason: string,
-    question: string, options: { type: "array", items: string }, sourceIds: { type: "array", items: string }, ready: { type: "boolean" },
+    observations: limitedList("observations"), category: { type: "string", enum: ["danger", "near_miss", "caution", "unknown"] },
+    title: limitedText(TEXT_LIMITS.title), summary: limitedText(TEXT_LIMITS.summary), description: limitedText(TEXT_LIMITS.description), reason: limitedText(TEXT_LIMITS.reason),
+    question: limitedText(TEXT_LIMITS.question), options: limitedList("options"), sourceIds: limitedList("sourceIds"),
+    ready: { type: "boolean" },
   },
   required: ["intent", "reply", "suggestedTopic", "issueType", "uncertainty", "observations", "category", "title", "summary", "description", "reason", "question", "options", "sourceIds", "ready"],
 };
@@ -52,7 +56,7 @@ selectedTopic은 사용자가 보고 있던 탐색 분야일 뿐 사진의 정�
 검색된 photo-* 문서는 K-ROAD가 정한 유형 경계와 질문 기준이다. 사진에서 실제 보이는 단서와 해당 문서의 양성·제외 조건을 비교해 세부 유형을 고르고, 사용한 문서 중 가장 관련 있는 1~3개의 id를 sourceIds에 포함한다. 문서 자체가 사진에 없는 위험을 증명하지는 않는다. 둘 이상 유형이 가능하면 확인 질문으로 보류한다.
 regulatoryContext는 공식 조문을 확인해 요약한 참고 자료다. 사진을 관찰한 뒤 관련 조문의 적용 조건을 비교하여 실제로 확인해야 할 장소·시설 종류·행위·사고 여부를 정한다. 법령 제목만 보고 제보 유형을 바꾸거나 위반·책임·담당 기관·통행 통제를 확정하지 않는다. 적용 조건이 사진에서 확인되지 않으면 짧은 확인 질문을 쓰거나 관련성만 설명한다. 일반적인 상황을 불법 행위로 추정하지 않는다. 관련 법령 정보는 별도 패널에 표시되며 sourceIds에는 검색된 사진·서비스 문서 ID만 쓴다.
 사진만으로 구멍과 그림자, 물웅덩이와 결빙을 확정하지 않는다. 사고 발생, 깊이, 통제, 법 위반, 정확한 위치를 추측하지 않는다. 사용자가 말하지 않은 아차 사고를 만들지 않는다. 차량의 파손은 관찰할 수 있지만 파손 원인·발생 시점·부상자·차로 통행 장애를 보지 못했다면 단정하지 않는다. 파손 차량만 보이고 현재 도로 위험이나 통행 영향이 불명확하면 ready=false, uncertainty=ambiguous로 두고 짧은 선택지로 확인한다. 사진에 보이지 않는 차량 부위의 손상을 쓰지 않는다.
-intent는 road_report/no_issue/help/out_of_scope, uncertainty는 clear/ambiguous/insufficient 중 하나다. 관찰(observations)과 제안(reason)을 분리한다. 내부 분류 category는 danger/near_miss/caution이며 불명확하면 문자열 unknown으로 둔다. 공식 행정 분류가 아니다. 제보할 만한 상태가 불명확하면 uncertainty를 ambiguous 또는 insufficient로 하고 핵심 질문 한 개와 서로 구별되는 짧은 선택지 2~3개(확인 불가 포함)를 만든다. no_issue이면 question은 빈 문자열, options는 빈 배열이다.
+intent는 road_report/no_issue/help/out_of_scope, uncertainty는 clear/ambiguous/insufficient 중 하나다. 관찰(observations)과 제안(reason)을 분리한다. 내부 분류 category는 danger/near_miss/caution이며 불명확하면 문자열 unknown으로 둔다. 공식 행정 분류가 아니다. 제보할 만한 상태가 불명확하면 uncertainty를 ambiguous 또는 insufficient로 하고 핵심 질문 한 개와 서로 구별되는 짧은 선택지 2~${LIST_LIMITS.options.count}개(확인 불가 포함)를 만든다. no_issue이면 question은 빈 문자열, options는 빈 배열이다.
 음성 인식·음성 읽기·마이크 기능은 없다. 결과와 확인 질문은 화면에 표시하고 알림음으로 준비를 알린다. 운전 중 촬영·조작을 요구하지 않으며 안전한 장소에서 확인하도록 안내한다.
 접수는 K-ROAD 관리자 접수함으로 이루어지고 외부 신고 사이트로 이동하지 않는다. 네가 접수 완료를 단정하지 않는다. 실제 저장 결과는 서버가 확인해 안내한다. 문장이 완성되고 해석이 명확한 경우에만 ready=true로 제안한다. 사진에서 위치를 추측하지 않으며 위치가 없어도 사진 판단 자체는 할 수 있다.
 title은 30자, summary는 120자, description은 10~2000자다. 불완전한 문장 필드는 빈 문자열, 알 수 없는 category/suggestedTopic은 문자열 unknown으로 둔다. 검색 근거의 id만 sourceIds에 넣으며 관련 답변에 실제 근거를 1개 이상 인용한다. URL이나 근거 id를 창작하지 않는다.
@@ -92,10 +96,14 @@ function validateLocation(value) {
   return { lat: value.lat, lng: value.lng, locationSource: value.locationSource, locationAccuracyM: value.locationSource === "gps" ? value.locationAccuracyM : null, locationCapturedAt: value.locationSource === "gps" ? value.locationCapturedAt : null };
 }
 function validateAnalysis(value, sources, regulatoryContext = []) {
-  const fail = () => failure("AI_RESPONSE_INVALID", "AI 판단의 형식을 확인하지 못했습니다. 다시 요청해 주세요.", 502);
+  const fail = (validationIssue = "invalid_fields") => {
+    const error = new ApiError("AI_RESPONSE_INVALID", "AI 판단의 형식을 확인하지 못했습니다. 사진은 유지했어요. 같은 요청 다시 확인을 눌러 주세요.", 502);
+    error.validationIssue = validationIssue;
+    throw error;
+  };
   if (!value || !["road_report", "no_issue", "help", "out_of_scope"].includes(value.intent) || !["clear", "ambiguous", "insufficient"].includes(value.uncertainty) || typeof value.ready !== "boolean") fail();
-  for (const [key, limit] of Object.entries({ reply: 1500, title: 30, summary: 120, description: 2000, reason: 400, question: 300 })) {
-    if (typeof value[key] !== "string" || value[key].length > limit) fail();
+  for (const [key, limit] of Object.entries(TEXT_LIMITS)) {
+    if (typeof value[key] !== "string" || value[key].length > limit) fail(`text:${key}`);
   }
   if (value.category === "unknown") value.category = null;
   if (!value.reply.trim() || !["danger", "near_miss", "caution", null].includes(value.category)) fail();
@@ -107,8 +115,8 @@ function validateAnalysis(value, sources, regulatoryContext = []) {
   if (value.issueType !== null && value.issueType !== "none" && !issueTopics[value.suggestedTopic]?.includes(value.issueType)) fail();
   if (["other_living", "other_road", "other_safety"].includes(value.issueType) && value.ready) fail();
   if (value.ready && (!value.issueType || value.issueType === "none")) fail();
-  for (const [key, limit, itemLength] of [["observations", 6, 200], ["options", 3, 100], ["sourceIds", 8, 100]]) {
-    if (!Array.isArray(value[key]) || value[key].length > limit || value[key].some((item) => typeof item !== "string" || !item.trim() || item.length > itemLength)) fail();
+  for (const [key, { count: limit, itemLength }] of Object.entries(LIST_LIMITS)) {
+    if (!Array.isArray(value[key]) || value[key].length > limit || value[key].some((item) => typeof item !== "string" || !item.trim() || item.length > itemLength)) fail(`list:${key}`);
   }
   if (value.intent === "no_issue" && (value.issueType !== "none" || value.ready || value.question || value.options.length || value.category)) fail();
   // The model may include an actual law title among citations. Keep verified law
@@ -130,12 +138,17 @@ async function infer(session, message, sources, regulatoryContext, config) {
   }
   const contents = [...session.messages.slice(-12).map((item) => ({ role: item.role === "assistant" ? "model" : "user", parts: [{ text: item.text }] })), { role: "user", parts }];
   const deadline = Date.now() + 85_000;
+  let correction = "";
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const analysis = await generateGeminiJson({ key: config.geminiApiKey, model, systemInstruction: instructions, contents, schema, timeoutMs: config.uwatTimeoutMs ?? 45_000, totalTimeoutMs: deadline - Date.now() });
+      const analysis = await generateGeminiJson({ key: config.geminiApiKey, model, systemInstruction: instructions + correction, contents, schema, timeoutMs: config.uwatTimeoutMs ?? 45_000, totalTimeoutMs: deadline - Date.now() });
       return validateAnalysis(analysis, sources, regulatoryContext);
     } catch (error) {
-      if (attempt || !["AI_RESPONSE_INVALID", "AI_GROUNDING_INVALID", "AI_INCOMPLETE"].includes(error.code) || deadline - Date.now() < 5_000) throw error;
+      if (!["AI_RESPONSE_INVALID", "AI_GROUNDING_INVALID", "AI_INCOMPLETE"].includes(error.code)) throw error;
+      // Log only server-defined validation metadata, never photo text, tokens or provider payloads.
+      console.warn("uwat_analysis_validation", JSON.stringify({ model, attempt: attempt + 1, code: error.code, issue: error.validationIssue ?? error.code }));
+      if (attempt || deadline - Date.now() < 5_000) throw error;
+      correction = `\n이전 응답이 서버 검증에서 거절됐다(${error.validationIssue ?? error.code}). 제공된 스키마의 배열 개수·문자 길이·필수 필드·검색 문서 ID를 다시 확인해 형식을 수정한다. 확인 질문은 선택지 2~${LIST_LIMITS.options.count}개이며 문제 없음이나 확정된 판단의 options는 빈 배열이다. 관찰·불확실성을 임의로 바꾸거나 접수 가능 상태로 강제하지 않는다.`;
     }
   }
 }
