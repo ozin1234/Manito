@@ -42,3 +42,11 @@
 .safety-app .sr-map-heading { margin-bottom: 20px; }
 .safety-app .sr-main { padding-top: 24px; }
 .kr-neighborhood-select select { appearance: none; padding-right: 30px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23677a96' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center; }
+
+.kr-intake-content { margin: 20px 0; padding: 18px; border: 1px solid #dde6f3; border-radius: 12px; background: #f8faff; }
+.kr-intake-content h3 { margin: 0 0 14px; color: #314e7b; font-size: 1rem; font-weight: 750; }
+.kr-intake-content dl { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 9px 12px; margin: 0; font-size: .875rem; line-height: 1.8; }
+.kr-intake-content dt { color: #6b7f9b; }.kr-intake-content dd { margin: 0; color: #304c76; overflow-wrap: anywhere; }
+.kr-intake-description { margin: 16px 0 0; padding-top: 15px; border-top: 1px solid #e0e8f5; color: #425f88; font-size: 1rem; line-height: 1.85; white-space: pre-wrap; }
+.kr-intake-content details { margin-top: 14px; color: #526e98; font-size: .875rem; }.kr-intake-content summary { min-height: 36px; padding-top: 7px; cursor: pointer; }.kr-intake-content details p { margin: 8px 0; line-height: 1.85; }
+.kr-my-copy .kr-my-summary { color: #4c6486; font-size: .9375rem; line-height: 1.7; }

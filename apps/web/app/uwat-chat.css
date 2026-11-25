@@ -64,3 +64,6 @@
 @media (max-width: 360px) { .uwat-chat > header { padding-inline: 13px; }.uwat-consent { padding-inline: 13px; }.uwat-tools { padding-inline: 13px; gap: 6px; }.uwat-tools button { gap: 5px; padding-inline: 6px; }.uwat-welcome ol { gap: 14px; } }
 @media (max-height: 600px) and (max-width: 760px) { .uwat-chat { right: 0; bottom: 0; left: 0; height: 100dvh; border-radius: 0; }.uwat-chat > header { padding-block: 10px; }.uwat-consent { padding-top: 9px; }.uwat-chat .sr-chat-disclaimer { padding-bottom: max(8px, env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .uwat-spinner { animation: none; }.uwat-chat .uwat-messages { scroll-behavior: auto; } }
+.uwat-submitted { display: grid; gap: 8px; margin: 15px 0; padding: 18px; border: 1px solid #d3e9dd; border-radius: 13px; color: #3c785c; background: #f0f9f4; }
+.uwat-submitted strong { font-size: 1rem; }.uwat-submitted p { margin: 0; font-size: .875rem; line-height: 1.8; }.uwat-submitted > span { font-size: .8125rem; }
+.uwat-question > p { color: #607697; font-size: .875rem; line-height: 1.8; margin: 9px 0; }

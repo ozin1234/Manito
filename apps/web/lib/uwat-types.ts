@@ -4,6 +4,12 @@ import type { ReportIssueType } from "./report-issue-types";
 
 export type UwatLocation = { lat: number; lng: number; locationSource: "gps" | "map"; locationAccuracyM: number | null; locationCapturedAt: string | null };
 export type UwatQuestion = { id: string; kind: "clarify" | "confirm" | "location"; text: string; options: Array<{ id: string; label: string }> };
+export type SubmittedReport = Omit<SafetyReport, "lat" | "lng" | "locationSource"> & {
+  lat: number | null; lng: number | null; locationSource: "gps" | "map" | "unknown";
+  receiptToken?: string; visibility?: "private"; photoAttached?: boolean; locationStatus?: "pending" | "provided";
+  submission?: { destination: "kroad_admin"; method: "photo_ai"; confirmation: "photo" | "multiple_choice"; reference: string };
+  assistant?: { reason?: string; answers?: Array<{ question: string; answer: string }> };
+};
 export type UwatReply = {
   sessionId: string; topic: ReportTopic; revision: number; phase: string; reply: string;
   analysis: { intent: string; suggestedTopic: ReportTopic | null; issueType: ReportIssueType | null; uncertainty: string; observations: string[]; category: SafetyReport["category"] | null; title: string; summary: string; description: string; reason: string; ready: boolean };
@@ -11,4 +17,5 @@ export type UwatReply = {
   sources: Array<{ id: string; title: string; authority: "official" | "product"; url: string | null; checkedAt: string }>;
   legalReferences: Array<{ id: string; title: string; authority: "official"; url: string; checkedAt: string; appliesWhen: string; text: string }>;
   model: string; confirmationToken: string | null;
+  report?: SubmittedReport; destination?: "kroad_admin";
 };

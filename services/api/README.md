@@ -1,13 +1,14 @@
 # K-ROAD 사진·관리 API
 
-사진 분석·선택지·위치 확인·최신 초안 공개 동의·기록 저장·기관 관리 처리를 담당한다. 로컬 Node 파일 저장과 운영 Worker의 D1/R2 어댑터는 같은 검증 로직을 사용한다.
+사진 분석·객관식 확인·비공개 관리자 접수·접수증 조회·기관 관리 처리를 담당한다. 로컬 Node 파일 저장과 운영 Worker D1/R2 어댑터는 같은 검증 로직을 사용한다.
 
-- GET /health, GET /v1: 상태와 현재 API 안내
-- GET /v1/assistant/status, POST /v1/assistant/chat: 사진 분석과 확인 질문
-- POST /v1/assistant/commit: 최신 위치·초안·토큰·공개 동의를 확인하고 저장
-- GET /v1/reports, GET /v1/reports/{id}/photo: 공개 기록과 사진 조회
-- GET /v1/case-progress: 명시적으로 공개한 진행 안내
-- /v1/admin/*: 별도 인증이 필요한 관리자 세션·민원 처리
-- GET /v1/tiles/{z}/{x}/{y}.png: 출처 표시와 캐시 정책을 지키는 기본 지도
+- `GET /health`, `GET /v1`: 상태와 API 안내
+- `GET /v1/assistant/status`, `POST /v1/assistant/chat`: 사진 분석·선택지·직접 관리자 접수
+- `POST /v1/reports/tracking`: 본인의 ID·비밀 접수증으로 비공개 제보 내용과 현재 처리 상태 조회
+- `GET /v1/reports`, `GET /v1/reports/{id}/photo`: 기존 공개 기록만 조회
+- `GET /v1/case-progress`: 공개 자료에 대한 공개 진행 안내만 조회
+- `/v1/admin/*`: 인증된 관리자 세션·사진·접수 내용·상태 관리
+- `GET /v1/tiles/{z}/{x}/{y}.png`: 출처 표시와 캐시 정책을 지키는 지도
+- `POST /v1/assistant/commit`: 이전 공개 저장 방식의 호환 경로. 새 직접 접수 세션에는 사용 불가
 
-기록 직접 작성 API는 제공하지 않는다. 사진 분석·위치 확인·동의 절차를 거친 저장만 허용한다. 설정 이름은 루트 docs/ENVIRONMENT.md에 있다. 공공기관 공식 접수는 별도다.
+기록 직접 작성 API는 제공하지 않는다. AI 판단과 동의 검증을 거친 저장만 허용한다. 새 사진은 일반 목록·사진·공개 진행 API에서 제외한다. 새 환경변수·스키마 변경은 없다. 설정 이름은 루트 docs/ENVIRONMENT.md, 직접 접수 계약은 docs/DIRECT_ADMIN_INTAKE.md에 있다.

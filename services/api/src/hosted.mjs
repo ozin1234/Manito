@@ -21,10 +21,12 @@ export async function hostedRequest(request, env) {
     if (write) {
       const kind = url.pathname === "/v1/admin/login" ? "login" : url.pathname === "/v1/assistant/chat" ? "analysis" : "write";
       if (await limited(env.DB, kind, kind === "login" ? 8 : kind === "analysis" ? 30 : 120)) return problem("REQUEST_LIMIT", "요청이 많습니다. 잠시 후 다시 시도해 주세요.", 429);
+      if (url.pathname !== "/v1/reports/tracking") {
       lease = randomUUID();
       const now = Date.now();
       const lock = await env.DB.prepare("INSERT INTO kroad_leases(name,owner,expires_at) VALUES('writer',?,?) ON CONFLICT(name) DO UPDATE SET owner=excluded.owner,expires_at=excluded.expires_at WHERE expires_at<? RETURNING owner").bind(lease, now + 120_000, now).first();
       if (lock?.owner !== lease) return problem("REQUEST_BUSY", "이전 저장 또는 사진 분석을 처리 중입니다. 잠시 후 다시 요청해 주세요.", 409);
+      }
     }
     const headers = new Headers(request.headers); headers.set("Authorization", `Bearer ${env.KROAD_API_KEY}`);
     return await withStorage(cloudStorage(env.DB, env.BUCKET, lease), () => handle(new Request(request, { headers }), {

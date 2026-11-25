@@ -17,7 +17,7 @@ async function stored(config, id) {
   catch (error) { if (error.code === "ENOENT") return null; throw error; }
 }
 async function sources(config) {
-  const community = (await listReports(config, 200)).map((report) => ({ id: report.id, topic: report.topic ?? "road", title: report.title, description: report.description, postedAt: report.createdAt, region: "현장 위치 확인", origin: "community", sourceName: "K-ROAD · 우왓 현장 기록", sourceUrl: null, sourceStatus: "기관 공식 접수 전", location: { lat: report.lat, lng: report.lng }, photoUrl: report.photoUrl ?? null }));
+  const community = (await listReports(config, 1000, { includePrivate: true })).map((report) => ({ id: report.id, topic: report.topic ?? "road", title: report.title, summary: report.summary, description: report.description, issueType: report.issueType, category: report.category, submission: report.submission, visibility: report.visibility, assistant: report.assistant, receivedAt: report.receivedAt, locationStatus: report.locationStatus, postedAt: report.createdAt, region: Number.isFinite(report.lat) && Number.isFinite(report.lng) ? "현장 위치 제공" : "위치 확인 필요", origin: "community", sourceName: report.submission ? "K-ROAD · 사진 AI 제보" : "K-ROAD · 이전 공개 기록", sourceUrl: null, sourceStatus: report.submission ? "관리자 접수함 접수" : "이전 공개 기록", ...(Number.isFinite(report.lat) && Number.isFinite(report.lng) ? { location: { lat: report.lat, lng: report.lng } } : {}), photoUrl: report.visibility === "private" && report.photoAttached ? `/api/admin/cases/${report.id}/photo` : report.photoUrl ?? null }));
   return [...feed.records.map((row) => ({ ...row, origin: "public_board" })), ...community];
 }
 function join(source, record) {
@@ -77,5 +77,13 @@ export async function publicProgress(config) {
   let files;
   try { files = await readdir(folder(config)); } catch (error) { if (error.code === "ENOENT") return []; throw error; }
   const rows = await Promise.all(files.filter((name) => name.endsWith(".json") && validId(name.slice(0, -5))).map((name) => stored(config, name.slice(0, -5))));
-  return rows.filter((row) => row?.publicUpdate).map(({ publicUpdate: row }) => ({ caseId: row.caseId, status: row.status, department: row.department, message: row.message, updatedAt: row.updatedAt }));
+  const publicIds = new Set([...feed.records.map((row) => row.id), ...(await listReports(config, 200)).map((row) => row.id)]);
+  return rows.filter((row) => row?.publicUpdate && publicIds.has(row.caseId)).map(({ publicUpdate: row }) => ({ caseId: row.caseId, status: row.status, department: row.department, message: row.message, updatedAt: row.updatedAt }));
+}
+
+export async function reporterProgress(config, report) {
+  const record = await stored(config, report.id);
+  const status = record?.status ?? "unassigned";
+  const messages = { unassigned: "관리자 접수함에 접수됐습니다. 담당자 확인을 기다리고 있어요.", reviewing: "관리자가 사진과 제보 내용을 검토하고 있어요.", assigned: "담당 부서가 배정됐습니다.", in_progress: "담당 부서에서 처리 중입니다.", resolved: "관리자가 조치 완료를 기록했습니다.", closed: "관리자가 처리를 종료했습니다. 해결 여부는 안내 내용을 확인해 주세요." };
+  return { caseId: report.id, status, department: record?.department ?? "", message: record?.publicUpdate?.status === status ? record.publicUpdate.message : messages[status], updatedAt: record?.updatedAt ?? report.receivedAt ?? report.createdAt };
 }

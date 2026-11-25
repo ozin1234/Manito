@@ -15,7 +15,7 @@ async function engine(path: string, request: Request, body?: string) {
 function clear(response: NextResponse) { response.cookies.set(COOKIE, "", { httpOnly: true, sameSite: "strict", path: "/api/admin", maxAge: 0 }); return response; }
 async function handler(request: Request, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params, action = path.join("/");
-  if (!/^(?:login|logout|session|cases(?:\/[a-zA-Z0-9-]+)?)$/.test(action)) return problem("NOT_FOUND", "관리 경로를 찾지 못했습니다.", 404);
+  if (!/^(?:login|logout|session|cases(?:\/[a-zA-Z0-9-]+(?:\/photo)?)?)$/.test(action)) return problem("NOT_FOUND", "관리 경로를 찾지 못했습니다.", 404);
   const origin = trustedRequestOrigin(request.url, process.env.KROAD_PUBLIC_ORIGIN);
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(new URL(origin).hostname);
   if (!local && !origin.startsWith("https://")) return problem("HTTPS_REQUIRED", "기관 관리자는 HTTPS 연결이 필요합니다.", 403);
@@ -30,11 +30,13 @@ async function handler(request: Request, context: { params: Promise<{ path: stri
       return NextResponse.json({ authenticated: false, ...(await status.json() as { configured: boolean }) }, { headers });
     }
     if (action !== "login" && !sessionToken(request)) return problem("ADMIN_UNAUTHORIZED", "기관 관리자 로그인이 필요합니다.", 401);
+    if (action.endsWith("/photo") && request.method !== "GET") return problem("METHOD_NOT_ALLOWED", "사진은 조회만 할 수 있습니다.", 405);
     if ((action === "login" || action === "logout") && request.method !== "POST" || action === "session" && request.method !== "GET" || action === "cases" && request.method !== "GET" || action.startsWith("cases/") && !["GET", "PATCH"].includes(request.method)) return problem("METHOD_NOT_ALLOWED", "지원하지 않는 요청입니다.", 405);
     if (Number(request.headers.get("content-length") ?? 0) > 8192) return problem("REQUEST_TOO_LARGE", "요청 내용이 너무 큽니다.", 413);
     const body = request.method === "GET" ? undefined : await request.text();
     if (body && Buffer.byteLength(body) > 8192) return problem("REQUEST_TOO_LARGE", "요청 내용이 너무 큽니다.", 413);
     const response = await engine(`/v1/admin/${action}${request.method === "GET" ? new URL(request.url).search : ""}`, request, body);
+    if (action.endsWith("/photo") && response.ok) return new NextResponse(response.body, { status: 200, headers: { ...headers, "Content-Type": response.headers.get("content-type") ?? "application/octet-stream", "Cache-Control": "private, no-store" } });
     const data = await response.json() as Record<string, unknown>;
     if (action === "login" && response.ok) {
       if (typeof data.token !== "string") throw new Error();

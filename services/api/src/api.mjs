@@ -1,10 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { ApiError } from "./errors.mjs";
 import { getStreetTile } from "./tiles.mjs";
-import { getReportPhoto, listReports } from "./reports.mjs";
+import { getReportPhoto, listReports, getTrackedReport } from "./reports.mjs";
 import { assistantStatus, assistantTurn, commitAssistant } from "./assistant.mjs";
 import { adminConfigured, loginAdmin, logoutAdmin, requireAdmin } from "./admin-auth.mjs";
-import { listCases, getCase, updateCase, publicProgress } from "./management.mjs";
+import { listCases, getCase, updateCase, publicProgress, reporterProgress } from "./management.mjs";
 const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" };
 const problem = (code, message, status) => json({ version: "1", error: { code, message } }, status);
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers });
@@ -27,7 +27,7 @@ export async function handle(request, config) {
   try {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/health") return json({ status: "ok", version: "1", service: "kroad" });
-    if (request.method === "GET" && ["/", "/v1"].includes(url.pathname)) return json({ name: "K-ROAD API", version: "1", analysisMode: "photo_only", endpoints: ["GET /v1/reports", "GET /v1/reports/{id}/photo", "GET /v1/assistant/status", "POST /v1/assistant/chat", "POST /v1/assistant/commit", "GET /v1/case-progress", "GET /v1/tiles/{z}/{x}/{y}.png"], officialSubmissionConnected: false });
+    if (request.method === "GET" && ["/", "/v1"].includes(url.pathname)) return json({ name: "K-ROAD API", version: "1", analysisMode: "photo_only", submissionMode: "direct_admin", adminSubmissionConnected: true, endpoints: ["GET /v1/reports", "GET /v1/reports/{id}/photo", "POST /v1/reports/tracking", "GET /v1/assistant/status", "POST /v1/assistant/chat", "POST /v1/assistant/commit", "GET /v1/case-progress", "GET /v1/tiles/{z}/{x}/{y}.png"], officialSubmissionConnected: false });
     if (!authorized(request, config.key)) return problem("UNAUTHORIZED", "유효한 K-ROAD API 키가 필요합니다.", 401);
     if (url.pathname === "/v1/admin/status" && request.method === "GET") return json({ configured: adminConfigured(config), officialSubmissionConnected: false });
     if (url.pathname === "/v1/admin/login" && request.method === "POST") return json(await loginAdmin(await bodyJson(request), config));
@@ -36,6 +36,12 @@ export async function handle(request, config) {
       if (url.pathname === "/v1/admin/session" && request.method === "GET") return json({ user: actor.user, role: actor.role, expiresAt: actor.expiresAt });
       if (url.pathname === "/v1/admin/logout" && request.method === "POST") return json(await logoutAdmin(request, config));
       if (url.pathname === "/v1/admin/cases" && request.method === "GET") return json(await listCases(config, url));
+      const adminPhoto = /^\/v1\/admin\/cases\/([0-9a-f-]{36})\/photo$/.exec(url.pathname);
+      if (adminPhoto && request.method === "GET") {
+        await getCase(config, adminPhoto[1]);
+        const photo = await getReportPhoto(config, adminPhoto[1], { allowPrivate: true });
+        return new Response(photo.bytes, { headers: { "content-type": photo.mime, "cache-control": "private, no-store", "x-content-type-options": "nosniff" } });
+      }
       const caseMatch = /^\/v1\/admin\/cases\/([^/]+)$/.exec(url.pathname);
       if (caseMatch && request.method === "GET") return json({ case: await getCase(config, caseMatch[1]) });
       if (caseMatch && request.method === "PATCH") return json({ case: await updateCase(config, caseMatch[1], await bodyJson(request), actor) });
@@ -45,6 +51,17 @@ export async function handle(request, config) {
     if (url.pathname === "/v1/assistant/status" && request.method === "GET") return json(assistantStatus(config));
     if (url.pathname === "/v1/assistant/chat" && request.method === "POST") return json(await assistantTurn(await bodyJson(request, 4_300_000), config));
     if (url.pathname === "/v1/assistant/commit" && request.method === "POST") return json(await commitAssistant(await bodyJson(request), config), 201);
+
+    if (url.pathname === "/v1/reports/tracking" && request.method === "POST") {
+      const body = await bodyJson(request, 24_000);
+      if (!Array.isArray(body?.receipts) || body.receipts.length > 100) return problem("INVALID_RECEIPTS", "조회할 접수증을 확인해 주세요.", 400);
+      const results = await Promise.all(body.receipts.map(async (receipt) => {
+        if (typeof receipt?.id !== "string" || typeof receipt?.receiptToken !== "string") return null;
+        const report = await getTrackedReport(config, receipt.id, receipt.receiptToken);
+        return report ? { report, progress: await reporterProgress(config, report) } : null;
+      }));
+      return json({ reports: results.filter(Boolean), unavailable: body.receipts.filter((_, index) => !results[index]).map((receipt) => typeof receipt?.id === "string" ? receipt.id : ""), destination: "kroad_admin" });
+    }
 
     if (url.pathname === "/v1/reports" && request.method === "GET") {
       const limit = Number(url.searchParams.get("limit") ?? "100");

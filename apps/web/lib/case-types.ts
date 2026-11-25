@@ -6,6 +6,7 @@ export const caseTransitions: Record<CaseStatus, CaseStatus[]> = { unassigned: [
 export type PublicCaseUpdate = { caseId: string; status: CaseStatus; department: string; message: string; updatedAt: string };
 export type ManagedCase = {
   id: string; topic: ReportTopic; title: string; region: string; postedAt: string; origin: "public_board" | "community";
+  summary?: string; issueType?: import("./report-issue-types").ReportIssueType; visibility?: "private"; submission?: { destination: "kroad_admin"; method: "photo_ai"; confirmation: "photo" | "multiple_choice"; reference: string }; locationStatus?: string; assistant?: { reason?: string; answers?: Array<{ question: string; answer: string }> };
   sourceName: string; sourceStatus: string; sourceUrl: string | null; description?: string; photoUrl?: string | null;
   location?: { lat: number; lng: number };
   management: { revision: number; status: CaseStatus; department: string; assignee: string; updatedAt: string | null; publicUpdate: PublicCaseUpdate | null; history: Array<{ id: string; actor: string; at: string; from: CaseStatus; to: CaseStatus; department: string; assignee: string; note: string; published: boolean; publicMessage?: string }> };

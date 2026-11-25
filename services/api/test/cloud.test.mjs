@@ -19,6 +19,22 @@ function fixture() {
   return {sql,db,bucket,env,request};
 }
 const image="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=";
+test("hosted direct admin intake and private receipt reads work through D1/R2 without exposing photos", async () => {
+  const f=fixture(), original=globalThis.fetch;
+  globalThis.fetch=async()=>Response.json({candidates:[{finishReason:"STOP",content:{parts:[{text:JSON.stringify({intent:"road_report",reply:"사진의 파손을 확인했어요.",suggestedTopic:"road",issueType:"pothole",uncertainty:"clear",observations:["노면 구멍이 보입니다."],category:"danger",title:"노면 파손 점검 요청",summary:"사진의 노면 파손 점검이 필요합니다.",description:"사진에서 노면에 파인 부분을 확인했습니다.",reason:"노면의 파손 단서를 근거로 제안합니다.",question:"",options:[],sourceIds:["photo-pothole"],ready:true})}]}}]});
+  try {
+    const result=await (await f.request("/assistant/chat","POST",{requestId:"12345678-1234-4123-8123-123456789abc",requestToken:"t".repeat(43),topic:"road",photoDataUrl:image,allowAiProcessing:true,submitToAdmin:true,allowAdminSubmission:true})).json();
+    assert.equal(result.phase,"submitted"); assert.equal((await (await f.request("/reports")).json()).reports.length,0);
+    assert.equal((await f.request("/reports/"+result.report.id+"/photo")).status,404);
+    f.sql.prepare("INSERT INTO kroad_leases VALUES('writer','another-writer',?)").run(Date.now()+120000);
+    const tracked=await f.request("/reports/tracking","POST",{receipts:[{id:result.report.id,receiptToken:result.report.receiptToken}]});
+    assert.equal(tracked.status,200); assert.equal((await tracked.json()).reports[0].report.submission.destination,"kroad_admin");
+    assert.equal(f.sql.prepare("SELECT owner FROM kroad_leases WHERE name='writer'").get().owner,"another-writer");
+    f.sql.exec("DELETE FROM kroad_leases");
+    const login=await (await f.request("/admin/login","POST",{username:"test-admin",password:"test-password-long-enough"})).json();
+    assert.equal((await f.request("/admin/cases/"+result.report.id+"/photo","GET",undefined,{"X-KROAD-Admin-Session":login.token})).status,200);
+  } finally {globalThis.fetch=original; f.sql.close();}
+});
 test("hosted photo analysis, confirmation, durable photo and admin progress reuse the same API",async()=>{
   const f=fixture(), original=globalThis.fetch;
   globalThis.fetch=async()=>Response.json({candidates:[{finishReason:"STOP",content:{parts:[{text:JSON.stringify({intent:"road_report",reply:"사진에 구멍이 보여요. 위치를 확인해 주세요.",suggestedTopic:"road",issueType:"pothole",uncertainty:"clear",observations:["노면에 구멍이 보임"],category:"danger",title:"노면의 구멍 확인",summary:"노면의 구멍을 확인한 사진입니다.",description:"사진에 노면의 구멍이 보입니다. 현장 위치 확인이 필요합니다.",reason:"노면 구멍의 사진 관찰을 바탕으로 제안합니다.",question:"",options:[],sourceIds:["photo-pothole"],ready:true})}]}}]});
