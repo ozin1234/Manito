@@ -57,6 +57,51 @@ test("only ambiguous photos ask buttons, and the answer submits without a second
   assert.equal(done.report.assistant.answers[0].answer, "패인 구멍"); assert.equal(calls, 2);
 }));
 
+test("four clarification buttons are preserved and the fourth answer reaches private intake", async () => fixture(async (config) => {
+  const choices = ["단순 젖은 노면", "얼어붙은 노면", "확인 불가", "실제로 패인 구멍"];
+  let calls = 0;
+  globalThis.fetch = async (_url, options) => {
+    const payload = JSON.parse(options.body);
+    assert.equal(payload.generationConfig.responseJsonSchema.properties.options.maxItems, 4);
+    assert.equal(payload.generationConfig.responseJsonSchema.properties.observations.maxItems, 6);
+    if (calls++) {
+      const context = JSON.parse(payload.contents.at(-1).parts[0].text).context;
+      assert.equal(context.selectedAnswers.at(-1).answer, choices[3]);
+      return provider(ready());
+    }
+    return provider({ ...ambiguous(), options: choices });
+  };
+  const request = input(), response = await call(config, "assistant/chat", request);
+  assert.equal(response.status, 200);
+  const first = await response.json();
+  assert.equal(calls, 1); assert.equal(first.phase, "needs_clarification");
+  assert.deepEqual(first.question.options.map((item) => item.label), choices);
+  assert.equal((await readdir(config.reportsDir)).filter((name) => name.endsWith(".json")).length, 0);
+  const done = await (await call(config, "assistant/chat", { ...request, sessionId: first.sessionId, selection: { questionId: first.question.id, optionId: "4" } })).json();
+  assert.equal(done.phase, "submitted"); assert.equal(done.report.assistant.answers[0].answer, choices[3]);
+  assert.equal(done.report.submission.confirmation, "multiple_choice");
+}));
+
+test("invalid lists and long text are repaired with feedback and cannot create an intake", async () => fixture(async (config) => {
+  const originalWarn = console.warn, logs = [];
+  console.warn = (...args) => logs.push(args);
+  try {
+    for (const [changes, issue] of [[{ options: ["하나", "둘", "셋", "넷", "다섯"] }, "list:options"], [{ reason: "내".repeat(401) }, "text:reason"]]) {
+      let calls = 0;
+      globalThis.fetch = async (_url, options) => {
+        const payload = JSON.parse(options.body);
+        if (calls++) assert.ok(payload.systemInstruction.parts[0].text.includes(issue));
+        return provider({ ...ambiguous(), ...changes });
+      };
+      const result = await call(config, "assistant/chat", input());
+      assert.equal(result.status, 502); assert.equal((await result.json()).error.code, "AI_RESPONSE_INVALID");
+      assert.equal(calls, 2);
+    }
+    assert.ok(logs.every((row) => !JSON.stringify(row).includes("내")));
+    assert.equal((await readdir(config.reportsDir)).filter((name) => name.endsWith(".json")).length, 0);
+  } finally { console.warn = originalWarn; }
+}));
+
 test("duplicate or lost-response retries reuse the same receipt and do not submit a different photo", async () => fixture(async (config) => {
   let calls = 0; globalThis.fetch = async () => { calls++; return provider(ready()); };
   const request = input(), first = await (await call(config, "assistant/chat", request)).json();
