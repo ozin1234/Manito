@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Bell, Building2, Camera, House, Info, MapPinned, Route, ShieldAlert, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SafetyReport } from "./report-map";
 import { SeedBadge, SeedButton } from "./seed-ui";
 import { UwatIcon } from "./uwat-icon";
@@ -16,7 +16,8 @@ import publicData from "@/data/public-complaints.json";
 import locationData from "@/data/complaint-locations.json";
 import { filterPublicComplaints, type PublicComplaintFeed } from "@/lib/public-complaints";
 import { mapComplaints, neighborhoodView, type ComplaintLocation, type MappedComplaint } from "@/lib/complaint-map";
-import { MY_REPORTS_KEY, readMyReports, rememberMyReport, type MyReportReceipt } from "@/lib/my-reports";
+import { MY_REPORTS_KEY, readMyReports, rememberMyReport, trackMyReports, type MyReportReceipt } from "@/lib/my-reports";
+import type { SubmittedReport } from "@/lib/uwat-types";
 import { MyReports } from "./my-reports";
 import { PublicComplaintDetail } from "./public-complaint-detail";
 const publicFeed = publicData as PublicComplaintFeed;
@@ -33,16 +34,9 @@ function Brand() {
 }
 
 function ReportDetail({ report, onClose }: { report: SafetyReport; onClose: () => void }) {
-  const [message, setMessage] = useState("");
-  const handoff = async () => {
-    const text = `[${reportTopics.find((item) => item.id === (report.topic ?? "road"))?.label ?? "도로"} 현장 기록] ${report.title}\n위치: ${report.lat.toFixed(5)}, ${report.lng.toFixed(5)}\n내용: ${report.description}\nK-ROAD 제보번호: ${report.id}`;
-    window.open("https://www.safetyreport.go.kr/", "_blank", "noopener,noreferrer");
-    try { await navigator.clipboard.writeText(text); setMessage("내용을 복사했습니다. 안전신문고에서 사진을 다시 첨부하고 제출해 주세요."); }
-    catch { setMessage("복사에 실패했습니다. 내용을 직접 옮겨 주세요."); }
-  };
   return <aside className="sr-detail" aria-label="제보 상세"><div className="sr-detail-head"><SeedBadge tone={report.category === "danger" ? "critical" : report.category === "near_miss" ? "warning" : "informative"}>{labels[report.category]}</SeedBadge><button type="button" className="sr-icon-button" onClick={onClose} aria-label="제보 상세 닫기"><X size={20}/></button></div>
     {report.photoUrl ? <img className="sr-detail-photo" src={report.photoUrl} alt={`${report.title} 현장 사진`}/> : <div className="sr-no-photo"><Camera size={26}/>등록된 현장 사진 없음</div>}
-    <div className="sr-detail-body"><small>{new Date(report.createdAt).toLocaleString("ko-KR")}{report.issueType ? ` · ${reportIssueLabel(report.issueType)}` : ""}</small><h2>{report.title}</h2><p className="sr-detail-summary"><Sparkles size={17}/>{report.summary}</p><p>{report.description}</p><div className="sr-detail-location"><MapPinned size={17}/>{report.lat.toFixed(5)}, {report.lng.toFixed(5)} · {report.locationSource === "gps" ? `휴대폰 GPS ±${Math.round(report.locationAccuracyM ?? 0)}m` : "지도 선택 위치"}</div><span className="sr-pending">기관 접수 전 · K-ROAD 지도 제보</span>{report.managementProgress && <div className="kr-report-progress"><strong>K-ROAD 관리 · {caseStatusLabels[report.managementProgress.status]}</strong><p>{report.managementProgress.message}</p><small>{report.managementProgress.department} · {report.managementProgress.updatedAt.slice(0, 10)}</small></div>}<button type="button" className="sr-agency-button" onClick={handoff}><Building2 size={17}/>안전신문고에서 기관에 제출</button><small className="sr-agency-note">공식 민원은 안전신문고에서 본인이 사진과 내용을 제출해야 접수됩니다. K-ROAD 저장만으로 기관에 전달되지 않습니다.</small>{message && <p className="sr-copy-message" role="status">{message}</p>}</div>
+    <div className="sr-detail-body"><small>{new Date(report.createdAt).toLocaleString("ko-KR")}{report.issueType ? ` · ${reportIssueLabel(report.issueType)}` : ""}</small><h2>{report.title}</h2><p className="sr-detail-summary"><Sparkles size={17}/>{report.summary}</p><p>{report.description}</p><div className="sr-detail-location"><MapPinned size={17}/>{report.lat.toFixed(5)}, {report.lng.toFixed(5)} · {report.locationSource === "gps" ? `휴대폰 GPS ±${Math.round(report.locationAccuracyM ?? 0)}m` : "지도 선택 위치"}</div><span className="sr-pending">이전 공개 현장 기록</span>{report.managementProgress && <div className="kr-report-progress"><strong>K-ROAD 관리 · {caseStatusLabels[report.managementProgress.status]}</strong><p>{report.managementProgress.message}</p><small>{report.managementProgress.department} · {report.managementProgress.updatedAt.slice(0, 10)}</small></div>}<small className="sr-agency-note">새 사진 제보는 우왓에서 관리자 접수함으로 바로 전달합니다.</small></div>
   </aside>;
 }
 
@@ -50,6 +44,8 @@ export function KroadApp() {
   const [reports, setReports] = useState<SafetyReport[]>([]);
   const [updates, setUpdates] = useState<PublicCaseUpdate[]>([]);
   const [receipts, setReceipts] = useState<MyReportReceipt[]>([]);
+  const receiptsRef = useRef<MyReportReceipt[]>([]);
+  const [trackingUnavailable, setTrackingUnavailable] = useState<string[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [progressError, setProgressError] = useState("");
   const [selected, setSelected] = useState<SafetyReport | null>(null);
@@ -72,7 +68,7 @@ export function KroadApp() {
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
-    const load = () => { try { setReceipts(readMyReports(localStorage.getItem(MY_REPORTS_KEY))); } catch { /* In-memory receipts still work. */ } };
+    const load = () => { try { const values = readMyReports(localStorage.getItem(MY_REPORTS_KEY)); receiptsRef.current = values; setReceipts(values); } catch { /* In-memory receipts still work. */ } };
     load();
     const changed = (event: StorageEvent) => { if (event.key === MY_REPORTS_KEY || event.key === null) load(); };
     window.addEventListener("storage", changed);
@@ -81,11 +77,13 @@ export function KroadApp() {
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [recordsResponse, progressResponse] = await Promise.all([fetch("/api/v1/reports?limit=200", { cache: "no-store" }), fetch("/api/v1/case-progress", { cache: "no-store" })]);
+      const [recordsResponse, progressResponse, tracked] = await Promise.all([fetch("/api/v1/reports?limit=200", { cache: "no-store" }), fetch("/api/v1/case-progress", { cache: "no-store" }), trackMyReports(receiptsRef.current)]);
       if (!recordsResponse.ok || !progressResponse.ok) throw new Error();
       const [recordsData, progressData] = await Promise.all([recordsResponse.json() as Promise<{ reports: SafetyReport[] }>, progressResponse.json() as Promise<{ updates: PublicCaseUpdate[] }>]);
       if (!Array.isArray(recordsData.reports) || !Array.isArray(progressData.updates)) throw new Error();
-      setReports(recordsData.reports); setUpdates(progressData.updates); setProgressError("");
+      setReports(recordsData.reports); setUpdates([...progressData.updates, ...tracked.updates]); setProgressError(""); setTrackingUnavailable(tracked.unavailable);
+      receiptsRef.current = tracked.receipts; setReceipts(tracked.receipts);
+      try { if (tracked.receipts.length) localStorage.setItem(MY_REPORTS_KEY, JSON.stringify(tracked.receipts)); } catch { /* In-memory details remain available. */ }
       setSelected((current) => current ? recordsData.reports.find((row: SafetyReport) => row.id === current.id) ?? current : null);
     } catch { setProgressError("최신 처리 상태를 가져오지 못했어요. 잠시 후 상태 새로고침을 눌러 주세요."); }
     finally { setRefreshing(false); }
@@ -93,13 +91,15 @@ export function KroadApp() {
   useEffect(() => { void refresh(); const onFocus = () => void refresh(); window.addEventListener("focus", onFocus); return () => window.removeEventListener("focus", onFocus); }, [refresh]);
   function openUwat() { setShowGreeting(false); setChatOpen(true); try { sessionStorage.setItem("kroad-uwat-greeting", "seen"); } catch { /* Optional storage. */ } }
   const showNotice = (text: string) => { setNotice(text); window.setTimeout(() => setNotice(""), 6000); };
-  const saved = (report: SafetyReport) => {
-    let next = rememberMyReport(receipts, report);
+  const saved = (report: SubmittedReport) => {
+    let next = rememberMyReport(receiptsRef.current, report), preserved = true;
     try { next = rememberMyReport(readMyReports(localStorage.getItem(MY_REPORTS_KEY)), report); localStorage.setItem(MY_REPORTS_KEY, JSON.stringify(next)); }
-    catch { showNotice("등록했지만 이 브라우저의 기록 보관이 차단되어 있어요. 등록 번호를 따로 보관해 주세요: " + report.id); }
-    setReceipts(next); setReports((current) => [report, ...current.filter((item) => item.id !== report.id)]);
-    setTopic(report.topic ?? "road"); setSource("all"); setSelectedPublic(null); setSelected(report);
-    setFocus({ lat: report.lat, lng: report.lng, zoom: 16 }); setChatOpen(false);
+    catch { preserved = false; }
+    receiptsRef.current = next; setReceipts(next); setTrackingUnavailable([]);
+    setUpdates((current) => [{ caseId: report.id, status: "unassigned", department: "", message: "관리자 접수함에 접수됐습니다. 담당자 확인을 기다리고 있어요.", updatedAt: report.createdAt }, ...current.filter((row) => row.caseId !== report.id)]);
+    setSelectedPublic(null); setSelected(null); setPoint(null); setChatOpen(false);
+    showNotice(preserved ? "관리자 접수함에 접수됐어요. 내가 보낸 제보에서 내용을 확인해 주세요." : "접수는 완료됐지만 브라우저 보관이 차단됐어요. 접수 번호를 따로 보관해 주세요: " + report.submission?.reference);
+    window.setTimeout(() => document.getElementById("my-reports")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   };
   const pick = (location: Point) => { setPoint(location); setPickingLocation(false); setChatOpen(true); };
   const topicInfo = reportTopics.find((item) => item.id === topic)!;
@@ -114,7 +114,7 @@ export function KroadApp() {
   return <div className="safety-app seed-kroad" data-topic={topic}>
     <header className="sr-header"><div className="kr-header-shell"><Brand/>
       <nav className="sr-bottom-nav" aria-label="정보 분야">{reportTopics.map((item) => { const Icon = topicIcons[item.id]; return <button type="button" key={item.id} className={topic === item.id ? "active" : ""} aria-pressed={topic === item.id} disabled={chatBusy} onClick={() => changeTopic(item.id)}><Icon size={20}/><span>{item.label}</span></button>; })}</nav>
-      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><a className="kr-my-anchor" href="#my-reports">내 민원{receipts.length > 0 && <b>{receipts.length}</b>}</a><SeedButton onClick={openUwat}><UwatIcon size={28}/>우왓</SeedButton></div>
+      <div className="sr-header-actions"><a className="kr-agency-link" href="/admin"><Building2 size={16}/>기관 관리</a><a className="kr-my-anchor" href="#my-reports">내 제보{receipts.length > 0 && <b>{receipts.length}</b>}</a><SeedButton onClick={openUwat}><UwatIcon size={28}/>우왓</SeedButton></div>
     </div></header>
     <main className="sr-main">
       <div className="sr-map-heading"><div><span className="sr-kicker">강원특별자치도 · {topicInfo.label}</span><h1>{topicInfo.heading}</h1><p>동네 지도에서 불편한 곳을 살펴보고, 발견한 상황은 우왓에 알려 주세요.</p></div></div>
@@ -133,8 +133,8 @@ export function KroadApp() {
         <aside className="kr-action-rail" aria-label="사진 분석과 공개 민원 출처"><section className="kr-photo-invite"><div className="kr-invite-label"><span className="kr-invite-symbol"><UwatIcon size={45}/></span><span>사진을 보는 도우미, 우왓</span></div><div className="kr-invite-copy"><h2>사진 한 장으로<br/> 함께 확인해요.</h2><p>사진에 보이는 상황을 살펴보고<br/>필요한 내용을 정리해 드려요.</p></div><button type="button" className="kr-photo-start" onClick={openUwat}><UwatIcon size={28}/>우왓</button><small><Bell size={14}/>확인이 필요하면 알림음으로 알려요</small></section><PublicComplaintSources/></aside>
       </div>
       <details className="kr-public-disclosure"><summary>공개 민원 목록 <span>{publicRows.length}건 · 위치 확인 전 민원 포함</span></summary><PublicComplaints topic={topic} region={region} query={query} mapped={mapped} onSelectLocation={(value) => { setSource("all"); selectPublic(value); document.getElementById("field-map")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}/></details>
-      <MyReports receipts={receipts} updates={updates} refreshing={refreshing} refreshError={progressError} onRefresh={() => void refresh()} onStart={openUwat}/>
-      <div className="sr-official-note"><Info size={18}/><p>공개 민원과 내가 보낸 민원은 별도입니다. 우왓에 등록한 내용의 기관 공식 접수는 안전신문고 등에서 별도로 진행해야 합니다.</p></div>
+      <MyReports receipts={receipts} updates={updates} unavailable={trackingUnavailable} refreshing={refreshing} refreshError={progressError} onRefresh={() => void refresh()} onStart={openUwat}/>
+      <div className="sr-official-note"><Info size={18}/><p>우왓에서 보낸 사진 제보는 K-ROAD 관리자 접수함에 전달됩니다. 담당 관리자가 내용을 검토하고 처리 과정을 안내합니다.</p></div>
       <footer className="kr-page-footer"><span><strong>K-ROAD</strong>우리 동네 불편과 위험을 함께</span><a href="/admin"><Building2 size={15}/>기관 관리</a></footer>
     </main>
     <button type="button" className="sr-chat-fab uwat-launcher" hidden={chatOpen} onClick={openUwat} aria-label="우왓 열기" title="우왓에서 사진을 올려 함께 확인해요">{showGreeting && <span className="uwat-greeting" aria-hidden="true"><strong>여기 있어요!</strong><small>사진은 제가 확인할게요</small></span>}<UwatIcon size={43} className={showGreeting ? "uwat-icon--hello" : ""}/><span>우왓</span></button>

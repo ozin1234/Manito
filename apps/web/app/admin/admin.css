@@ -3,3 +3,7 @@
 .kr-admin-photo{display:block;width:100%;max-height:280px;object-fit:contain;background:#f2f5f9;border-radius:10px;margin:15px 0}
 
 .kr-admin { font-size: 1rem; line-height: 1.65; }.kr-admin-header a { min-height: 44px; }.kr-admin input:not([type=checkbox]), .kr-admin textarea { font-size: 1rem; }.kr-admin select { min-height: 44px; padding-right: 30px; }.kr-admin h1 { letter-spacing: -.045em; line-height: 1.45; }.kr-admin a:focus-visible { outline: 3px solid #93b2ff; outline-offset: 3px; }.kr-admin-row-meta { flex-wrap: wrap; }.kr-admin-context { line-height: 1.8; }
+.kr-admin-source-tabs { display: flex; gap: 9px; flex-wrap: wrap; margin: 22px 0 18px; }
+.kr-admin-source-tabs button { display: inline-flex; align-items: center; gap: 9px; min-height: 46px; padding: 10px 15px; border: 1px solid #d9e3f3; border-radius: 10px; background: #fff; color: #526b91; font: inherit; font-size: .875rem; cursor: pointer; }
+.kr-admin-source-tabs button[aria-pressed="true"] { color: #3158bd; border-color: #a9bef3; background: #eef4ff; }.kr-admin-source-tabs b { font-size: .8125rem; }
+.kr-admin-intake { margin: 18px 0; padding: 18px; border: 1px solid #dbe6f5; border-radius: 12px; background: #f7faff; color: #425f8b; }.kr-admin-intake h3 { margin: 0 0 12px; font-size: 1rem; }.kr-admin-intake p { margin: 8px 0; font-size: .9375rem; line-height: 1.85; white-space: pre-wrap; }

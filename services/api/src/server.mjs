@@ -23,7 +23,8 @@ createServer(async (incoming, outgoing) => {
     let size = 0;
     for await (const chunk of incoming) {
       size += chunk.length;
-      const maxBodyBytes = incoming.method === "POST" && ["/v1/reports", "/v1/assistant/chat"].includes(incoming.url?.split("?")[0]) ? 4_300_000 : 8192;
+      const pathname = incoming.url?.split("?")[0];
+      const maxBodyBytes = incoming.method === "POST" && ["/v1/reports", "/v1/assistant/chat"].includes(pathname) ? 4_300_000 : pathname === "/v1/reports/tracking" ? 24_000 : 8192;
       if (size > maxBodyBytes) {
         outgoing.writeHead(413).end();
         return;

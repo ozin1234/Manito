@@ -15,7 +15,7 @@ async function proxy(request: Request, action: string) {
     const data = await response.json();
     return NextResponse.json(data, { status: response.status, headers: { "Cache-Control": "no-store" } });
   } catch {
-    return NextResponse.json({ error: { code: "ASSISTANT_UNAVAILABLE", message: "우왓 서버 응답을 받지 못했습니다. 입력은 유지되며 자동 저장하지 않았습니다." } }, { status: 503 });
+    return NextResponse.json({ error: { code: "ASSISTANT_UNAVAILABLE", message: "우왓 서버 응답을 받지 못했습니다. 접수 결과를 확인하지 못했습니다. 같은 요청으로 다시 확인해 주세요." } }, { status: 503 });
   }
 }
 export async function GET(request: Request, { params }: { params: Promise<{ action: string }> }) { return proxy(request, (await params).action); }
