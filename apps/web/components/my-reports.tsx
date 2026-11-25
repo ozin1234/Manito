@@ -8,8 +8,8 @@ import { myReportProgress } from "@/lib/my-reports";
 import { reportIssueLabel } from "@/lib/report-issue-types";
 import { reportTopics } from "@/lib/report-topics";
 
-export function MyReports({ receipts, updates, refreshing, refreshError, unavailable = [], onRefresh, onStart }: {
-  receipts: MyReportReceipt[]; updates: PublicCaseUpdate[]; refreshing: boolean; refreshError: string; unavailable?: string[]; onRefresh: () => void; onStart: () => void;
+export function MyReports({ receipts, updates, refreshing, refreshError, unavailable = [], onRefresh }: {
+  receipts: MyReportReceipt[]; updates: PublicCaseUpdate[]; refreshing: boolean; refreshError: string; unavailable?: string[]; onRefresh: () => void; onStart?: () => void;
 }) {
   const [selected, setSelected] = useState<MyReportReceipt | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -28,7 +28,7 @@ export function MyReports({ receipts, updates, refreshing, refreshError, unavail
         <span className="kr-my-copy"><small>{reportTopics.find((row) => row.id === (receipt.topic ?? "road"))?.label} · {new Date(receipt.createdAt).toLocaleDateString("ko-KR")}</small><strong>{receipt.title}</strong>{receipt.summary && <span className="kr-my-summary">{receipt.summary}</span>}<span>{receipt.submission ? `${reportIssueLabel(receipt.issueType ?? null)} · ${receipt.submission.confirmation === "multiple_choice" ? "객관식 확인 후 접수" : "사진 AI 자동 접수"}` : "이전 공개 기록"}</span><span>{current.resolution}</span></span>
         <span className={`kr-my-status ${current.tone}`}>{current.label}</span><ChevronRight size={18}/>
       </button>;
-    })}</div> : <div className="kr-my-empty"><ClipboardList size={30}/><div><strong>아직 보낸 제보가 없어요.</strong><p>사진을 올리면 AI가 내용을 정리해 관리자에게 접수하고, 이곳에 접수 내역이 표시돼요.</p></div><button type="button" onClick={onStart}>우왓</button></div>}
+    })}</div> : <div className="kr-my-empty"><ClipboardList size={30}/><div><strong>아직 보낸 제보가 없어요.</strong><p>사진을 올리면 AI가 내용을 정리해 관리자에게 접수하고, 이곳에 접수 내역이 표시돼요. 오른쪽 아래 우왓에서 시작해 주세요.</p></div></div>}
     <dialog ref={dialog} className="kr-progress-dialog" aria-labelledby="my-progress-title" onCancel={(event) => { event.preventDefault(); close(); }} onClick={(event) => { if (event.target === dialog.current) close(); }}>
       {selected && <div className="kr-progress-content"><div className="kr-progress-head"><span>내 제보 접수·처리 현황</span><button type="button" aria-label="처리 현황 닫기" onClick={close}><X size={21}/></button></div>
         <h2 id="my-progress-title">{selected.title}</h2><p className="kr-progress-date">등록 {new Date(selected.createdAt).toLocaleString("ko-KR")}</p>
