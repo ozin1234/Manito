@@ -105,6 +105,21 @@ test("clarification choices have no fixed cap and preserve the final answer", as
   }
 }));
 
+test("known issue types use their canonical field without confirming an uncertain photo", async () => fixture(async (config) => {
+  for (const [selectedTopic, issueType, canonicalTopic] of [["road", "flooding", "safety"], ["safety", "pothole", "road"], ["road", "trash_scattered", "living"]]) {
+    let calls = 0;
+    globalThis.fetch = async () => provider(calls++ ? ready({ suggestedTopic: selectedTopic, issueType }) : { ...ambiguous(), suggestedTopic: selectedTopic, issueType });
+    const request = input({ topic: selectedTopic }), response = await call(config, "assistant/chat", request);
+    assert.equal(response.status, 200);
+    const first = await response.json();
+    assert.equal(calls, 1); assert.equal(first.analysis.suggestedTopic, canonicalTopic);
+    assert.equal(first.topic, selectedTopic); assert.equal(first.phase, "needs_clarification");
+    assert.equal(first.analysis.uncertainty, "ambiguous"); assert.equal(first.analysis.ready, false); assert.ok(!first.report);
+    const done = await (await call(config, "assistant/chat", { ...request, sessionId: first.sessionId, selection: { questionId: first.question.id, optionId: "1" } })).json();
+    assert.equal(done.phase, "submitted"); assert.equal(done.report.topic, canonicalTopic); assert.equal(done.report.issueType, issueType);
+  }
+}));
+
 test("invalid observations and long text are repaired with feedback and cannot create an intake", async () => fixture(async (config) => {
   const originalWarn = console.warn, logs = [];
   console.warn = (...args) => logs.push(args);
